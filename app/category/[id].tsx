@@ -63,7 +63,7 @@ export default function CategoryScreen() {
       </SafeAreaView>
     );
   }
-  
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000' : '#F2F2F7' }]}>
       <Animated.View style={[styles.header, headerAnimatedStyle]}>
@@ -81,7 +81,7 @@ export default function CategoryScreen() {
       </Animated.View>
       
       <Animated.View 
-        entering={FadeInUp.delay(100).duration(400)}
+        entering={FadeInUp.delay(0).duration(400)}
         exiting={FadeOutDown.duration(300)}
         style={styles.content}
       >
