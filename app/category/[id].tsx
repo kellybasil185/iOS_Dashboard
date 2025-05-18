@@ -10,11 +10,13 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import Animated, { 
-  FadeInUp, 
+  FadeInUp,
+  Easing, 
   FadeOutDown,
   useAnimatedStyle,
   useSharedValue,
-  withTiming
+  withTiming,
+  FadeOutUp
 } from 'react-native-reanimated';
 
 import AppGrid from '@/components/AppGrid';
@@ -80,13 +82,23 @@ export default function CategoryScreen() {
         </Text>
       </Animated.View>
       
-      <Animated.View 
-        entering={FadeInUp.delay(0).duration(400)}
-        exiting={FadeOutDown.duration(300)}
-        style={styles.content}
-      >
-        <AppGrid apps={category.apps} categoryColor={category.color} />
-      </Animated.View>
+      <Animated.View
+      entering={FadeInUp
+        .delay(100) // Your chosen delay
+        .duration(400) // Your chosen duration
+        .easing(Easing.inOut(Easing.quad)) // Your chosen easing
+        .withInitialValues({
+          opacity: 0,
+          transform: [{ translateY: 25 }] // Start with opacity 0 and translated.
+                                          // Adjust '25' as needed to match FadeInUp's typical start or your preference.
+        })}
+      exiting={FadeOutUp
+        .duration(400)
+        .easing(Easing.inOut(Easing.quad))}
+      style={styles.content} // Your existing styles
+    >
+      <AppGrid apps={category.apps} categoryColor={category.color} />
+    </Animated.View>
     </SafeAreaView>
   );
 }
