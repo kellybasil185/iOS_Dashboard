@@ -1,0 +1,8 @@
+[build]
+  command = "npx expo export -p web" # Or just "expo export -p web" if npx isn't needed in Netlify's env
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
