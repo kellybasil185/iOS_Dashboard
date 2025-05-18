@@ -84,16 +84,16 @@ export default function CategoryScreen() {
       
       <Animated.View
       entering={FadeInUp
-        .delay(50) // Your chosen delay
-        .duration(300) // Your chosen duration
+        .delay(100) // Your chosen delay
+        .duration(400) // Your chosen duration
         .easing(Easing.inOut(Easing.quad)) // Your chosen easing
         .withInitialValues({
           opacity: 0,
-          transform: [{ translateY: 1 }] // Start with opacity 0 and translated.
+          transform: [{ translateY: 0 }] // Start with opacity 0 and translated.
                                           // Adjust '25' as needed to match FadeInUp's typical start or your preference.
         })}
       exiting={FadeOutUp
-        .duration(300)
+        .duration(400)
         .easing(Easing.inOut(Easing.quad))}
       style={styles.content} // Your existing styles
     >

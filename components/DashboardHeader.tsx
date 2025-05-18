@@ -8,7 +8,7 @@ export default function DashboardHeader() {
   
   return (
     <Animated.View 
-      entering={FadeIn.duration(600)} 
+      entering={FadeIn.duration(200)} 
       style={styles.container}
     >
       <Text style={[styles.title, { color: isDark ? '#fff' : '#000' }]}>

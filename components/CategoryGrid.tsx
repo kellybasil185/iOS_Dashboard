@@ -1,24 +1,36 @@
+// In components/CategoryGrid.tsx
 import React from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
-import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  FadeInUp, // Or just FadeIn if you prefer less vertical movement for the container
+  FadeOutDown,
+  Easing,
+  FadeOut,
+  FadeIn
+} from 'react-native-reanimated';
 import { categories } from '@/utils/data';
 import CategoryButton from './CategoryButton';
 
 export default function CategoryGrid() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
   return (
-    <Animated.View 
-      entering={FadeInUp.duration(500).delay(200)}
-      exiting={FadeOutDown.duration(300)}
+    <Animated.View
       style={styles.container}
+      entering={FadeIn // Animates the whole grid container
+        .delay(10)      // A brief delay before the grid starts appearing
+        .duration(300)  // Duration for the container's animation
+        .easing(Easing.inOut(Easing.quad)) // Smooth easing for the container
+        .withInitialValues({
+          opacity: 0,
+          transform: [{ translateY: 0 }] // Container starts invisible and slightly down
+        })}
+      exiting={FadeOut.duration(300)}
     >
       <View style={styles.grid}>
         {categories.map((category, index) => (
-          <CategoryButton 
+          <CategoryButton
             key={category.id}
             category={category}
+            // index is not strictly needed for simultaneous animation, but fine to keep
             index={index}
           />
         ))}
