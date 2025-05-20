@@ -145,15 +145,10 @@ export const categories: Category[] = [
     ],
   },
   {
-    id: 'others',
-    name: 'Others',
+    id: 'shopping',
+    name: 'Shopping',
     color: '#FF9500',
     apps: [
-      {
-        id: 'pornhub',
-        name: 'Pornhub',
-        url: 'https://www.pornhub.com/',
-      },
       {
         id: 'jiji',
         name: 'Jiji Ghana',
@@ -173,6 +168,18 @@ export const categories: Category[] = [
         id: 'amazon',
         name: 'Amazon',
         url: 'https://www.amazon.com/',
+      },
+    ],
+  },
+  {
+    id: 'others',
+    name: 'Others',
+    color: '#8E8E93',
+    apps: [
+      {
+        id: 'pornhub',
+        name: 'Pornhub',
+        url: 'https://www.pornhub.com/',
       },
     ],
   },

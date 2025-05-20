@@ -4,7 +4,9 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "module": "esnext",
+    "moduleResolution": "node"
   },
   "include": [
     "**/*.ts",
