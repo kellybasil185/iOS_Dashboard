@@ -37,6 +37,7 @@ const imageMap: { [key: string]: any } = {
   'twitch': require('@/assets/icons/twitch.png'),
   'web': require('@/assets/icons/web.png'),
   'xm': require('@/assets/icons/xm.png'),
+  'stripchat': require('@/assets/icons/stripchat.png'),
 };
 
 const iconCache: { [key: string]: React.FC } = {};
@@ -128,6 +129,8 @@ export function getIconForApp(id: string) {
       return getCachedIcon('aliexpress');
     case 'amazon':
       return getCachedIcon('amazon');
+    case 'stripchat':
+      return getCachedIcon('stripchat');
     default:
       return getCachedIcon('default');
   }

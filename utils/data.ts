@@ -181,6 +181,11 @@ export const categories: Category[] = [
         name: 'Pornhub',
         url: 'https://www.pornhub.com/',
       },
+      {
+        id: 'stripchat',
+        name: 'StripChat',
+        url: 'https://www.stripchat.com/',
+      },
     ],
   },
 ];
