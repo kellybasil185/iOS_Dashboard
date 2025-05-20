@@ -12,6 +12,9 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withSequence,
+  withDelay,
+  Easing,
 } from 'react-native-reanimated';
 import { App } from '@/types';
 import { getIconForApp } from '@/utils/icons';
@@ -28,19 +31,31 @@ export default function AppButton({ app, index, categoryColor }: AppButtonProps)
   const [isLoading, setIsLoading] = useState(false);
   
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(20);
   
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: scale.value }]
+      transform: [
+        { scale: scale.value },
+        { translateY: translateY.value }
+      ],
+      opacity: opacity.value
     };
   });
   
   const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+    scale.value = withSpring(0.95, { 
+      damping: 15, 
+      stiffness: 150 
+    });
   };
   
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+    scale.value = withSpring(1, { 
+      damping: 15, 
+      stiffness: 150 
+    });
   };
   
   const openApp = async () => {
@@ -54,19 +69,35 @@ export default function AppButton({ app, index, categoryColor }: AppButtonProps)
     }
   };
   
+  React.useEffect(() => {
+    opacity.value = withDelay(
+      index * 50,
+      withSequence(
+        withSpring(1, {
+          damping: 20,
+          stiffness: 100
+        })
+      )
+    );
+    
+    translateY.value = withDelay(
+      index * 50,
+      withSpring(0, {
+        damping: 20,
+        stiffness: 100
+      })
+    );
+  }, []);
+  
   const Icon = getIconForApp(app.id);
   const backgroundColor = isDark ? '#1C1C1E' : '#FFFFFF';
   const iconColor = categoryColor || (isDark ? '#FFFFFF' : '#000000');
   
   return (
-    <Animated.View 
-      style={styles.container}
-      entering={FadeInUp.delay(index * 50).duration(300)}
-    >
+    <Animated.View style={[styles.container, animatedStyle]}>
       <Animated.View style={[
         styles.buttonContainer, 
         { backgroundColor },
-        animatedStyle,
         isLoading && styles.loadingButton
       ]}>
         <Pressable

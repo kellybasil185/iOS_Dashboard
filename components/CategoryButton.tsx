@@ -1,27 +1,26 @@
-// In components/CategoryButton.tsx
 import React from 'react';
 import {
   Pressable,
   StyleSheet,
   Text,
-  View, // Changed outer Animated.View to View
+  View,
   useColorScheme
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, { // FadeInUp is no longer imported for an entering animation here
-  FadeIn,
+import Animated, {
   FadeInLeft,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  // Easing (if used for other things, otherwise can be removed if only for FadeInUp)
+  withSequence,
+  withDelay,
 } from 'react-native-reanimated';
 import { Category } from '@/types';
 import { getIconForCategory } from '@/utils/icons';
 
 interface CategoryButtonProps {
   category: Category;
-  index: number; // This is no longer strictly needed for animation in this component
+  index: number;
 }
 
 export default function CategoryButton({ category, index }: CategoryButtonProps) {
@@ -30,19 +29,51 @@ export default function CategoryButton({ category, index }: CategoryButtonProps)
   const router = useRouter();
 
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateX = useSharedValue(-20);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: scale.value }]
+      transform: [
+        { scale: scale.value },
+        { translateX: translateX.value }
+      ],
+      opacity: opacity.value
     };
   });
 
+  React.useEffect(() => {
+    opacity.value = withDelay(
+      index * 50,
+      withSequence(
+        withSpring(1, {
+          damping: 20,
+          stiffness: 100
+        })
+      )
+    );
+    
+    translateX.value = withDelay(
+      index * 50,
+      withSpring(0, {
+        damping: 20,
+        stiffness: 100
+      })
+    );
+  }, []);
+
   const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+    scale.value = withSpring(0.95, { 
+      damping: 15, 
+      stiffness: 150 
+    });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+    scale.value = withSpring(1, { 
+      damping: 15, 
+      stiffness: 150 
+    });
   };
 
   const navigateToCategory = () => {
@@ -57,11 +88,10 @@ export default function CategoryButton({ category, index }: CategoryButtonProps)
     <Animated.View 
       style={styles.container}
       entering={FadeInLeft.duration(300)}
-    >      
-      <Animated.View style={[ // This inner Animated.View for scaling is fine
+    >
+      <Animated.View style={[
         styles.buttonContainer,
-        { backgroundColor },
-        animatedStyle
+        { backgroundColor }
       ]}>
         <Pressable
           style={styles.button}
