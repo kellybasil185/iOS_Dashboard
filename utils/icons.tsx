@@ -39,85 +39,97 @@ const imageMap: { [key: string]: any } = {
   'xm': require('@/assets/icons/xm.png'),
 };
 
+const iconCache: { [key: string]: React.FC } = {};
+
+function getCachedIcon(name: string): React.FC {
+  if (iconCache[name]) {
+    return iconCache[name];
+  }
+
+  const iconComponent = () => <CustomIcon name={name} />;
+  iconCache[name] = iconComponent;
+  return iconComponent;
+}
+
 export function getIconForCategory(id: string) {
   switch (id) {
     case 'trading':
-      return () => <CustomIcon name="tradingapp" />;
+      return getCachedIcon('tradingapp');
     case 'web':
-      return () => <CustomIcon name="web" />;
+      return getCachedIcon('web');
     case 'entertainment':
-      return () => <CustomIcon name="entertainment" />;
+      return getCachedIcon('entertainment');
     case 'ai':
-      return () => <CustomIcon name="ai" />;
+      return getCachedIcon('ai');
     case 'others':
-      return () => <CustomIcon name="others" />;
+      return getCachedIcon('others');
     case 'shopping':
-      return () => <CustomIcon name="shopping" />;
+      return getCachedIcon('shopping');
     default:
-      return () => <CustomIcon name="default" />;
+      return getCachedIcon('default');
   }
 }
 
 export function getIconForApp(id: string) {
   switch (id) {
     case 'tradingview':
-      return () => <CustomIcon name="tradingview" />;
+      return getCachedIcon('tradingview');
     case 'xm':
-      return () => <CustomIcon name="xm" />;
+      return getCachedIcon('xm');
     case 'exness':
-      return () => <CustomIcon name="exness" />;
+      return getCachedIcon('exness');
     case 'metatrader5':
-      return () => <CustomIcon name="mt5" />;
+      return getCachedIcon('mt5');
     case 'metatrader4':
-      return () => <CustomIcon name="mt4" />;
+      return getCachedIcon('mt4');
     case 'forexfactory':
-      return () => <CustomIcon name="forex_factory" />;
+      return getCachedIcon('forex_factory');
     case 'myfxbook':
-      return () => <CustomIcon name="fxbook" />;
+      return getCachedIcon('fxbook');
     case 'fundednext':
-      return () => <CustomIcon name="fundednext" />;
+      return getCachedIcon('fundednext');
     case 'google':
-      return () => <CustomIcon name="google" />;
+      return getCachedIcon('google');
     case 'gmail':
-      return () => <CustomIcon name="gmail" />;
+      return getCachedIcon('gmail');
     case 'icloud':
-      return () => <CustomIcon name="icloud" />;
+      return getCachedIcon('icloud');
     case 'telegram':
-      return () => <CustomIcon name="telegram" />;
+      return getCachedIcon('telegram');
     case 'gdrive':
-      return () => <CustomIcon name="gdrive" />;
+      return getCachedIcon('gdrive');
     case 'duckduckgo':
-      return () => <CustomIcon name="duckduckgo" />;
+      return getCachedIcon('duckduckgo');
     case 'youtube':
-      return () => <CustomIcon name="youtube" />;
+      return getCachedIcon('youtube');
     case 'tiktok':
-      return () => <CustomIcon name="tiktok" />;
+      return getCachedIcon('tiktok');
     case 'instagram':
-      return () => <CustomIcon name="instagram" />;
+      return getCachedIcon('instagram');
     case 'spotify':
-      return () => <CustomIcon name="spotify" />;
+      return getCachedIcon('spotify');
     case 'twitch':
-      return () => <CustomIcon name="twitch" />;
+      return getCachedIcon('twitch');
     case 'quora':
-      return () => <CustomIcon name="quora" />;
+      return getCachedIcon('quora');
     case 'reddit':
-      return () => <CustomIcon name="reddit" />;
+      return getCachedIcon('reddit');
     case 'chatgpt':
-      return () => <CustomIcon name="chatgpt" />;
+      return getCachedIcon('chatgpt');
     case 'gemini':
-      return () => <CustomIcon name="gemini" />;
+      return getCachedIcon('gemini');
     case 'pornhub':
-      return () => <CustomIcon name="pornhub" />;
+      return getCachedIcon('pornhub');
     case 'jiji':
-      return () => <CustomIcon name="jiji" />;
+      return getCachedIcon('jiji');
     case 'jumia':
-      return () => <CustomIcon name="jumia" />;
+      return getCachedIcon('jumia');
     case 'aliexpress':
-      return () => <CustomIcon name="aliexpress" />;
+      return getCachedIcon('aliexpress');
     case 'amazon':
-      return () => <CustomIcon name="amazon" />;
+      return getCachedIcon('amazon');
     default:
-      return () => <CustomIcon name="default" />;
+      return getCachedIcon('default');
   }
 }
 
