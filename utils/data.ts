@@ -36,6 +36,16 @@ export const categories: Category[] = [
         name: 'Forex Factory',
         url: 'https://www.forexfactory.com/',
       },
+      {
+        id: 'myfxbook',
+        name: 'MyFxBook',
+        url: 'https://www.myfxbook.com/',
+      },
+      {
+        id: 'fundednext',
+        name: 'FundedNext',
+        url: 'https://fundednext.com/',
+      },
     ],
   },
   {
@@ -58,6 +68,21 @@ export const categories: Category[] = [
         name: 'iCloud',
         url: 'https://www.icloud.com/',
       },
+      {
+        id: 'telegram',
+        name: 'Telegram Web',
+        url: 'https://web.telegram.org/',
+      },
+      {
+        id: 'gdrive',
+        name: 'Google Drive',
+        url: 'https://drive.google.com/',
+      },
+      {
+        id: 'duckduckgo',
+        name: 'DuckDuckGo',
+        url: 'https://duckduckgo.com/',
+      },
     ],
   },
   {
@@ -79,6 +104,26 @@ export const categories: Category[] = [
         id: 'instagram',
         name: 'Instagram',
         url: 'https://www.instagram.com/',
+      },
+      {
+        id: 'spotify',
+        name: 'Spotify',
+        url: 'https://open.spotify.com/',
+      },
+      {
+        id: 'twitch',
+        name: 'Twitch',
+        url: 'https://www.twitch.tv/',
+      },
+      {
+        id: 'quora',
+        name: 'Quora',
+        url: 'https://www.quora.com/',
+      },
+      {
+        id: 'reddit',
+        name: 'Reddit',
+        url: 'https://www.reddit.com/',
       },
     ],
   },
@@ -118,6 +163,16 @@ export const categories: Category[] = [
         id: 'jumia',
         name: 'Jumia',
         url: 'https://www.jumia.com.gh/',
+      },
+      {
+        id: 'aliexpress',
+        name: 'AliExpress',
+        url: 'https://www.aliexpress.com/',
+      },
+      {
+        id: 'amazon',
+        name: 'Amazon',
+        url: 'https://www.amazon.com/',
       },
     ],
   },

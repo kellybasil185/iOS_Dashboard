@@ -1,11 +1,10 @@
 // In components/CategoryGrid.tsx
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native'; // Removed useColorScheme as isDark wasn't used here
 import Animated, {
-  FadeInUp, // Or just FadeIn if you prefer less vertical movement for the container
+  FadeInUp, // Or your preferred entrance animation (e.g., FadeIn, BounceIn)
   FadeOutDown,
-  Easing,
-  FadeOut,
+  Easing, // Import Easing for smoother animations
   FadeIn
 } from 'react-native-reanimated';
 import { categories } from '@/utils/data';
@@ -14,23 +13,23 @@ import CategoryButton from './CategoryButton';
 export default function CategoryGrid() {
   return (
     <Animated.View
-      style={styles.container}
-      entering={FadeIn // Animates the whole grid container
-        .delay(10)      // A brief delay before the grid starts appearing
-        .duration(300)  // Duration for the container's animation
-        .easing(Easing.inOut(Easing.quad)) // Smooth easing for the container
+      style={styles.container} // Ensure this style is on the Animated.View
+      entering={FadeIn // All buttons will animate as part of this single animation
+        .duration(200)  // Duration for the grid to animate in
+        .easing(Easing.inOut(Easing.quad)) // Makes the animation feel smoother
         .withInitialValues({
           opacity: 0,
-          transform: [{ translateY: 0 }] // Container starts invisible and slightly down
+          transform: [{ translateY: 20 }] // Initial state: invisible and slightly down
         })}
-      exiting={FadeOut.duration(300)}
+      exiting={FadeOutDown.duration(300)} // How the grid disappears
     >
       <View style={styles.grid}>
         {categories.map((category, index) => (
           <CategoryButton
             key={category.id}
             category={category}
-            // index is not strictly needed for simultaneous animation, but fine to keep
+            // The 'index' prop is no longer needed by CategoryButton for animation delay,
+            // but you can keep it if it's used for other non-animation purposes.
             index={index}
           />
         ))}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInLeft } from 'react-native-reanimated';
 
 export default function DashboardHeader() {
   const colorScheme = useColorScheme();
@@ -8,7 +8,7 @@ export default function DashboardHeader() {
   
   return (
     <Animated.View 
-      entering={FadeIn.duration(200)} 
+      entering={FadeInLeft.duration(300)} 
       style={styles.container}
     >
       <Text style={[styles.title, { color: isDark ? '#fff' : '#000' }]}>

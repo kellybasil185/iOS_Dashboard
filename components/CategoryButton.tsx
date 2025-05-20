@@ -4,55 +4,61 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
+  View, // Changed outer Animated.View to View
   useColorScheme
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-  FadeIn, // Using a simple FadeIn for each button
+import Animated, { // FadeInUp is no longer imported for an entering animation here
+  FadeIn,
+  FadeInLeft,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  Easing // For the button's fade easing
+  // Easing (if used for other things, otherwise can be removed if only for FadeInUp)
 } from 'react-native-reanimated';
 import { Category } from '@/types';
 import { getIconForCategory } from '@/utils/icons';
 
 interface CategoryButtonProps {
   category: Category;
-  index: number;
+  index: number; // This is no longer strictly needed for animation in this component
 }
 
 export default function CategoryButton({ category, index }: CategoryButtonProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const router = useRouter();
+
   const scale = useSharedValue(1);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }]
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }]
+    };
+  });
 
-  const handlePressIn = () => scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
-  const handlePressOut = () => scale.value = withSpring(1, { damping: 15, stiffness: 150 });
-  const navigateToCategory = () => router.push(`/category/${category.id}`);
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+  };
+
+  const navigateToCategory = () => {
+    router.push(`/category/${category.id}`);
+  };
 
   const Icon = getIconForCategory(category.id);
   const backgroundColor = isDark ? '#1C1C1E' : '#FFFFFF';
   const iconColor = category.color || (isDark ? '#FFFFFF' : '#000000');
 
   return (
-    <Animated.View // This Animated.View will handle the button's individual quick fade
+    <Animated.View 
       style={styles.container}
-      entering={FadeIn
-        .duration(300) // The "small fadein animation for maybe like 200ms duration"
-        .easing(Easing.out(Easing.ease)) // A gentle ease-out for the fade
-        .withInitialValues({
-          opacity: 0, // Each button starts transparent
-        })}
-      // No 'exiting' here unless you want individual button exit animations
-    >
-      <Animated.View style={[ // Inner Animated.View for scaling (remains the same)
+      entering={FadeInLeft.duration(300)}
+    >      
+      <Animated.View style={[ // This inner Animated.View for scaling is fine
         styles.buttonContainer,
         { backgroundColor },
         animatedStyle
@@ -67,7 +73,13 @@ export default function CategoryButton({ category, index }: CategoryButtonProps)
           <View style={styles.iconContainer}>
             <Icon color={iconColor} size={32} />
           </View>
-          <Text style={[styles.label, { color: isDark ? '#FFFFFF' : '#000000' }]} numberOfLines={1}>
+          <Text
+            style={[
+              styles.label,
+              { color: isDark ? '#FFFFFF' : '#000000' }
+            ]}
+            numberOfLines={1}
+          >
             {category.name}
           </Text>
         </Pressable>
