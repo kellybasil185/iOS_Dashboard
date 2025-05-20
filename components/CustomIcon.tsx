@@ -8,7 +8,7 @@ interface CustomIconProps {
   style?: any;
 }
 
-const CustomIcon: React.FC<CustomIconProps> = ({ name, size = 32, style }) => {
+const CustomIcon: React.FC<CustomIconProps> = ({ name, size = 40, style }) => {
   const source = getCustomIcon(name);
 
   return <Image source={source} style={[styles.icon, { width: size, height: size }, style]} />;
