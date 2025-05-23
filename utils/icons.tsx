@@ -1,44 +1,6 @@
 import React from 'react';
 import CustomIcon from '@/components/CustomIcon';
-
-const imageMap: { [key: string]: any } = {
-  'ai': require('@/assets/icons/ai.png'),
-  'aliexpress': require('@/assets/icons/aliexpress.png'),
-  'amazon': require('@/assets/icons/amazon.png'),
-  'chatgpt': require('@/assets/icons/chatgpt.png'),
-  'default': require('@/assets/icons/default.png'),
-  'jiji': require('@/assets/icons/jiji.png'),
-  'jumia': require('@/assets/icons/jumia.png'),
-  'youtube': require('@/assets/icons/youtube.png'),
-  'mt4': require('@/assets/icons/mt4.png'),
-  'mt5': require('@/assets/icons/mt5.png'),
-  'others': require('@/assets/icons/others.png'),
-  'pornhub': require('@/assets/icons/pornhub.png'),
-  'duckduckgo': require('@/assets/icons/duckduckgo.png'),
-  'entertainment': require('@/assets/icons/entertainment.png'),
-  'exness': require('@/assets/icons/exness.png'),
-  'forex_factory': require('@/assets/icons/forex_factory.png'),
-  'fundednext': require('@/assets/icons/fundednext.png'),
-  'fxbook': require('@/assets/icons/fxbook.png'),
-  'gdrive': require('@/assets/icons/gdrive.png'),
-  'gemini': require('@/assets/icons/gemini.png'),
-  'gmail': require('@/assets/icons/gmail.png'),
-  'google': require('@/assets/icons/google.png'),
-  'icloud': require('@/assets/icons/icloud.png'),
-  'instagram': require('@/assets/icons/instagram.png'),
-  'quora': require('@/assets/icons/quora.png'),
-  'reddit': require('@/assets/icons/reddit.png'),
-  'shopping': require('@/assets/icons/shopping.png'),
-  'spotify': require('@/assets/icons/spotify.png'),
-  'telegram': require('@/assets/icons/telegram.png'),
-  'tiktok': require('@/assets/icons/tiktok.png'),
-  'tradingapp': require('@/assets/icons/tradingapp.png'),
-  'tradingview': require('@/assets/icons/tradingview.png'),
-  'twitch': require('@/assets/icons/twitch.png'),
-  'web': require('@/assets/icons/web.png'),
-  'xm': require('@/assets/icons/xm.png'),
-  'stripchat': require('@/assets/icons/stripchat.png'),
-};
+import { imageMap } from '@/components/IconRegistry';
 
 const iconCache: { [key: string]: React.FC } = {};
 

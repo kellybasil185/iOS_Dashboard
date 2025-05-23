@@ -1,3 +1,4 @@
+// ./app/category/[id].tsx
 import React, { useEffect } from 'react';
 import { 
   SafeAreaView, 
