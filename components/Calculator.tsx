@@ -9,15 +9,14 @@ import {
   Platform,
   useWindowDimensions,
   ScrollView,
-  Animated, // Added for animations
-  Easing,   // Added for animation easing
+  Animated,
+  Easing,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Delete, ListRestart, XCircle } from 'lucide-react-native'; // Assuming you might want more icons
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Added for caching
+import { Delete, ListRestart, CircleX } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// --- Responsive Sizing Setup (from previous step) ---
 const REFERENCE_SCREEN_WIDTH = 375;
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const scaleFactor = screenWidth / REFERENCE_SCREEN_WIDTH;
@@ -28,13 +27,13 @@ const BASELINE_DISPLAY_FONT_SIZE = 70;
 const BASELINE_MIN_DISPLAY_FONT_SIZE = 28;
 const BASELINE_DISPLAY_CONTAINER_MARGIN_BOTTOM = 16;
 const BASELINE_BUTTONS_PADDING_BOTTOM = 16;
-const BASELINE_HISTORY_SHEET_HEIGHT = screenHeight * 0.35; // Approx 35% of screen height for history
+const BASELINE_HISTORY_SHEET_HEIGHT = screenHeight * 0.35;
 
 const calculatorWidth = screenWidth * 0.9;
 const buttonMargin = s(BASELINE_BUTTON_MARGIN);
 const buttonSize = (calculatorWidth / 4) - (buttonMargin * 2);
 
-// Helper function to format numbers (remains unchanged)
+// Helper function to format numbers
 function formatNumberWithCommas(numberString: string): string {
   if (!numberString || numberString === 'Error' || numberString.toLowerCase().includes('e')) {
     return numberString;
@@ -48,7 +47,7 @@ function formatNumberWithCommas(numberString: string): string {
   return sign + formattedIntegerPart + decimalPart;
 }
 
-// Custom hook for display font size (remains largely unchanged, uses scaled baselines)
+// Custom hook for display font size
 function useDisplayFontSize(value: string) {
   const { width: currentHookScreenWidth } = useWindowDimensions();
   const initialFontSize = Math.round(BASELINE_DISPLAY_FONT_SIZE * (currentHookScreenWidth / REFERENCE_SCREEN_WIDTH));
@@ -72,17 +71,18 @@ function useDisplayFontSize(value: string) {
   return fontSize;
 }
 
-// --- History Entry Type ---
 interface HistoryEntry {
   id: string;
   expression: string;
   result: string;
   firstValue: string;
   operatorUsed: string;
-  secondValue: string; // The B in A op B
+  secondValue: string;
+  timestamp: number;
 }
 
 const ASYNC_STORAGE_KEY = 'calculatorState';
+const MAX_HISTORY_ENTRIES = 10;
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
@@ -92,28 +92,23 @@ const Calculator = () => {
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
   const [repeatOperand, setRepeatOperand] = useState<string | null>(null);
   const [repeatOperator, setRepeatOperator] = useState<string | null>(null);
-
-  // --- History State ---
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const currentDisplayFontSize = useDisplayFontSize(displayValue);
-
-  // --- Animation Values ---
-  const historySheetAnim = useRef(new Animated.Value(BASELINE_HISTORY_SHEET_HEIGHT)).current; // Start off-screen (bottom)
+  const historySheetAnim = useRef(new Animated.Value(BASELINE_HISTORY_SHEET_HEIGHT)).current;
   const historySheetOpacity = useRef(new Animated.Value(1)).current;
 
-
-  // --- Caching Logic ---
-  const [isLoaded, setIsLoaded] = useState(false); // To prevent saving initial default state before loading
-
-  // Load state from AsyncStorage on mount
+  // Load state from AsyncStorage
   useEffect(() => {
     const loadState = async () => {
       try {
         const savedStateString = await AsyncStorage.getItem(ASYNC_STORAGE_KEY);
+        console.log('Loaded state string:', savedStateString);
         if (savedStateString) {
           const savedState = JSON.parse(savedStateString);
+          console.log('Parsed saved state:', savedState);
           setDisplayValue(savedState.displayValue || '0');
           setOperator(savedState.operator || null);
           setFirstValue(savedState.firstValue || '');
@@ -122,9 +117,10 @@ const Calculator = () => {
           setRepeatOperand(savedState.repeatOperand || null);
           setRepeatOperator(savedState.repeatOperator || null);
           setHistory(savedState.history || []);
+          console.log('Loaded history:', savedState.history || []);
         }
-      } catch (e) {
-        console.error("Failed to load calculator state:", e);
+      } catch (error) {
+        console.error("Failed to load calculator state:", error);
       } finally {
         setIsLoaded(true);
       }
@@ -132,50 +128,81 @@ const Calculator = () => {
     loadState();
   }, []);
 
-  // Save state to AsyncStorage on change
+  // Save state to AsyncStorage
   useEffect(() => {
-    if (!isLoaded) return; // Don't save until state is loaded
+    if (!isLoaded) return;
 
     const saveState = async () => {
       try {
         const stateToSave = {
-          displayValue, operator, firstValue, waitingForSecondValue,
-          selectedOperator, repeatOperand, repeatOperator, history,
+          displayValue,
+          operator,
+          firstValue,
+          waitingForSecondValue,
+          selectedOperator,
+          repeatOperand,
+          repeatOperator,
+          history,
         };
+        console.log('Saving state:', stateToSave);
         await AsyncStorage.setItem(ASYNC_STORAGE_KEY, JSON.stringify(stateToSave));
-      } catch (e) {
-        console.error("Failed to save calculator state:", e);
+        console.log('State saved successfully!');
+      } catch (error) {
+        console.error("Failed to save calculator state:", error);
       }
     };
     saveState();
   }, [displayValue, operator, firstValue, waitingForSecondValue, selectedOperator, repeatOperand, repeatOperator, history, isLoaded]);
 
+  const addCalculationToHistory = (
+    fv: string,
+    op: string,
+    sv: string,
+    res: string
+  ) => {
+    const newEntry: HistoryEntry = {
+      id: Date.now().toString(),
+      expression: `${formatNumberWithCommas(fv)} ${op} ${formatNumberWithCommas(sv)}`,
+      result: res,
+      firstValue: fv,
+      operatorUsed: op,
+      secondValue: sv,
+      timestamp: Date.now(),
+    };
 
-  // --- Animation Handlers ---
+    console.log('New history entry:', newEntry);
+
+    setHistory(prevHistory => {
+      const newHistory = [newEntry, ...prevHistory].slice(0, MAX_HISTORY_ENTRIES);
+      console.log('Updated history:', newHistory);
+      return newHistory;
+    });
+  };
+
   const toggleHistorySheet = () => {
-    if (isHistoryVisible) { // Closing
+    if (isHistoryVisible) {
       Animated.timing(historySheetAnim, {
-        toValue: BASELINE_HISTORY_SHEET_HEIGHT, // Slide down
+        toValue: BASELINE_HISTORY_SHEET_HEIGHT,
         duration: 300,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        useNativeDriver: true, // Use true if only transform/opacity
+        useNativeDriver: true,
       }).start(() => setIsHistoryVisible(false));
-      Animated.timing(historySheetOpacity, { // Ensure opacity is back for next open
+      Animated.timing(historySheetOpacity, {
         toValue: 1,
-        duration: 0, // Instant
+        duration: 0,
         useNativeDriver: true,
       }).start();
-    } else { // Opening
+    } else {
       setIsHistoryVisible(true);
       Animated.timing(historySheetAnim, {
-        toValue: 0, // Slide up
+        toValue: 0,
         duration: 300,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
         useNativeDriver: true,
       }).start();
     }
   };
-  
+
   const closeHistoryWithFadeOut = (callback?: () => void) => {
     Animated.timing(historySheetOpacity, {
       toValue: 0,
@@ -183,37 +210,20 @@ const Calculator = () => {
       easing: Easing.linear,
       useNativeDriver: true,
     }).start(() => {
-      historySheetAnim.setValue(BASELINE_HISTORY_SHEET_HEIGHT); // Reset position off-screen
+      historySheetAnim.setValue(BASELINE_HISTORY_SHEET_HEIGHT);
       setIsHistoryVisible(false);
-      historySheetOpacity.setValue(1); // Reset opacity for next open
+      historySheetOpacity.setValue(1);
       if (callback) callback();
     });
-  };
-
-
-  // --- Event Handlers (incorporating history and repeat logic) ---
-  const addCalculationToHistory = (
-    fv: string, op: string, sv: string, res: string
-  ) => {
-    const expressionString = `${formatNumberWithCommas(fv)} ${op} ${formatNumberWithCommas(sv)}`;
-    const newEntry: HistoryEntry = {
-      id: Date.now().toString(), // Simple unique ID
-      expression: expressionString,
-      result: res,
-      firstValue: fv,
-      operatorUsed: op,
-      secondValue: sv,
-    };
-    setHistory(prevHistory => [newEntry, ...prevHistory].slice(0, 10));
   };
 
   const handleHistoryItemPress = (item: HistoryEntry) => {
     closeHistoryWithFadeOut(() => {
       setDisplayValue(item.result);
-      setFirstValue(item.firstValue); // Or set to item.result if preferred for immediate next op
-      setOperator(item.operatorUsed); // Or null to allow new op on the result
-      setWaitingForSecondValue(false); // Assuming loading a completed calculation
-      setSelectedOperator(null); // Or item.operatorUsed
+      setFirstValue(item.result);
+      setOperator(null);
+      setWaitingForSecondValue(false);
+      setSelectedOperator(null);
       setRepeatOperand(item.secondValue);
       setRepeatOperator(item.operatorUsed);
     });
@@ -221,43 +231,44 @@ const Calculator = () => {
 
   const handleClearHistory = () => {
     setHistory([]);
-    // Optionally close the sheet after clearing
-    // toggleHistorySheet(); 
   };
-
 
   const handleNumberInput = (num: string) => {
     const maxDigits = 12;
     if (waitingForSecondValue) {
-        setDisplayValue(num);
-        setWaitingForSecondValue(false);
+      setDisplayValue(num);
+      setWaitingForSecondValue(false);
     } else {
-        if (!operator && repeatOperator) {
-            setDisplayValue(num); setFirstValue(''); 
-            setRepeatOperand(null); setRepeatOperator(null);
-        } else if (displayValue === '0' && num === '0' && !displayValue.includes('.')) {
-            return;
-        } else if ((displayValue === '0' && num !== '.')) {
-            setDisplayValue(num); setFirstValue(''); 
-            setRepeatOperand(null); setRepeatOperator(null);
-        } else {
-            if (displayValue.length < maxDigits) {
-                setDisplayValue(displayValue + num);
-            }
-            if (!operator) {
-                setRepeatOperand(null); setRepeatOperator(null);
-            }
+      if (!operator && repeatOperator) {
+        setDisplayValue(num);
+        setFirstValue('');
+        setRepeatOperand(null);
+        setRepeatOperator(null);
+      } else if (displayValue === '0' && num === '0' && !displayValue.includes('.')) {
+        return;
+      } else if ((displayValue === '0' && num !== '.')) {
+        setDisplayValue(num);
+        setFirstValue('');
+        setRepeatOperand(null);
+        setRepeatOperator(null);
+      } else {
+        if (displayValue.length < maxDigits) {
+          setDisplayValue(displayValue + num);
         }
+        if (!operator) {
+          setRepeatOperand(null);
+          setRepeatOperator(null);
+        }
+      }
     }
   };
 
   const handleOperatorInput = (op: string) => {
-    setRepeatOperand(null); 
+    setRepeatOperand(null);
     setRepeatOperator(null);
     if (operator && !waitingForSecondValue && firstValue !== '' && displayValue !== 'Error') {
-      // Previously, this might have been handleEqual() or handleEqual(false)
-      handleEqual(true); // CORRECT: Mark this as an intermediate calculation
-      setFirstValue(displayValue); 
+      handleEqual(true);
+      setFirstValue(displayValue);
     } else if (displayValue !== 'Error') {
       setFirstValue(displayValue);
     }
@@ -268,10 +279,12 @@ const Calculator = () => {
     }
   };
 
-  const handleEqual = (isIntermediateCalc = false) => { // Added optional param
+  const handleEqual = (isIntermediateCalc = false) => {
     let num1: number, num2: number;
     let opToExecute: string | null = null;
-    let fvForHistory: string = firstValue, svForHistory: string = displayValue, opForHistory: string | null = operator;
+    let fvForHistory: string = firstValue;
+    let svForHistory: string = displayValue;
+    let opForHistory: string | null = operator;
     let isError = false;
 
     if (operator && firstValue && displayValue !== 'Error') {
@@ -280,12 +293,11 @@ const Calculator = () => {
       opToExecute = operator;
       setRepeatOperand(displayValue);
       setRepeatOperator(operator);
-      // History values already assigned
     } else if (!operator && repeatOperator && repeatOperand && displayValue !== 'Error') {
-      num1 = parseFloat(displayValue); 
-      num2 = parseFloat(repeatOperand);   
+      num1 = parseFloat(displayValue);
+      num2 = parseFloat(repeatOperand);
       opToExecute = repeatOperator;
-      fvForHistory = displayValue; // Current result is the first value for history expression
+      fvForHistory = displayValue;
       svForHistory = repeatOperand;
       opForHistory = repeatOperator;
     } else {
@@ -294,19 +306,34 @@ const Calculator = () => {
 
     let result = 0;
     switch (opToExecute) {
-      case '+': result = num1 + num2; break;
-      case '-': result = num1 - num2; break;
-      case '*': result = num1 * num2; break;
-      case '/':
-        if (num2 === 0) { setDisplayValue('Error'); isError = true; } 
-        else { result = num1 / num2; }
+      case '+':
+        result = num1 + num2;
         break;
-      default: return;
+      case '-':
+        result = num1 - num2;
+        break;
+      case '*':
+        result = num1 * num2;
+        break;
+      case '/':
+        if (num2 === 0) {
+          setDisplayValue('Error');
+          isError = true;
+        } else {
+          result = num1 / num2;
+        }
+        break;
+      default:
+        return;
     }
 
     if (isError) {
-      setOperator(null); setFirstValue(''); setSelectedOperator(null);
-      setWaitingForSecondValue(false); setRepeatOperand(null); setRepeatOperator(null);
+      setOperator(null);
+      setFirstValue('');
+      setSelectedOperator(null);
+      setWaitingForSecondValue(false);
+      setRepeatOperand(null);
+      setRepeatOperator(null);
       return;
     }
 
@@ -318,67 +345,63 @@ const Calculator = () => {
     }
 
     setDisplayValue(finalDisplayString);
-    setFirstValue(finalDisplayString); 
-    setOperator(null); 
+    setFirstValue(finalDisplayString);
+    setOperator(null);
     setSelectedOperator(null);
     setWaitingForSecondValue(false);
 
-    if (!isIntermediateCalc && opToExecute && fvForHistory && svForHistory) { // Only add to history if it's a user '=' or repeat '='
-        addCalculationToHistory(fvForHistory, opToExecute, svForHistory, finalDisplayString);
+    if (!isIntermediateCalc && opToExecute && fvForHistory && svForHistory) {
+      addCalculationToHistory(fvForHistory, opToExecute, svForHistory, finalDisplayString);
     }
   };
 
   const handleClear = () => {
-    setDisplayValue('0'); setOperator(null); setFirstValue('');
-    setWaitingForSecondValue(false); setSelectedOperator(null);
-    setRepeatOperand(null); setRepeatOperator(null);
+    setDisplayValue('0');
+    setOperator(null);
+    setFirstValue('');
+    setWaitingForSecondValue(false);
+    setSelectedOperator(null);
+    setRepeatOperand(null);
+    setRepeatOperator(null);
   };
 
   const handleBackspace = () => {
     if (displayValue === 'Error' || waitingForSecondValue) return;
-    if(!waitingForSecondValue && !operator){
-        setRepeatOperand(null); setRepeatOperator(null);
+    if (!waitingForSecondValue && !operator) {
+      setRepeatOperand(null);
+      setRepeatOperator(null);
     }
     setDisplayValue(displayValue.slice(0, -1) || '0');
   };
 
   const handlePercentage = () => {
     if (displayValue === 'Error') return;
-    const originalDisplay = displayValue; // For history
-    const originalFirst = firstValue;
-    const originalOp = operator;
-
-    setRepeatOperand(null); setRepeatOperator(null);
-    let currentValue = parseFloat(displayValue);
+    const currentValue = parseFloat(displayValue);
     let resultValue: number;
     if (operator && firstValue) {
       const firstNum = parseFloat(firstValue);
-      resultValue = (operator === '+' || operator === '-') ? (firstNum * currentValue) / 100 : currentValue / 100;
+      resultValue = (operator === '+' || operator === '-')
+        ? (firstNum * currentValue) / 100
+        : currentValue / 100;
     } else {
       resultValue = currentValue / 100;
     }
     const finalResultStr = parseFloat(resultValue.toFixed(7)).toString();
     setDisplayValue(finalResultStr);
-    // setFirstValue(finalResultStr); // Or not, depending on desired chain after %
-    setWaitingForSecondValue(false); 
-    
-    // Optionally add percentage operation to history
-    // addCalculationToHistory(
-    //   operator ? originalFirst : originalDisplay, 
-    //   operator ? originalOp + " then %" : "% of", 
-    //   operator ? originalDisplay : "100", 
-    //   finalResultStr
-    // );
+    setWaitingForSecondValue(false);
+    setRepeatOperand(null);
+    setRepeatOperator(null);
   };
 
   const handleDecimal = () => {
     if (!operator && repeatOperator) {
-        setDisplayValue(displayValue + '.'); 
-        setFirstValue(displayValue); 
-        setRepeatOperand(null); setRepeatOperator(null);
+      setDisplayValue(displayValue + '.');
+      setFirstValue(displayValue);
+      setRepeatOperand(null);
+      setRepeatOperator(null);
     } else if (waitingForSecondValue) {
-        setDisplayValue('0.');
-        setWaitingForSecondValue(false);
+      setDisplayValue('0.');
+      setWaitingForSecondValue(false);
     } else if (!displayValue.includes('.')) {
       setDisplayValue(displayValue + '.');
     }
@@ -390,36 +413,30 @@ const Calculator = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.headerControls}>
-        {/* Placeholder for potential title or back button if needed */}
         <TouchableOpacity onPress={toggleHistorySheet} style={styles.historyToggleButton}>
-            {/* Replace with a proper icon */}
-            <ListRestart size={s(24)} color="#FFF" /> 
+          <ListRestart size={s(24)} color="#FFF" />
         </TouchableOpacity>
       </View>
       <View style={styles.displayContainer}>
-        <Text
-          style={[styles.display, { fontSize: currentDisplayFontSize }]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.display, { fontSize: currentDisplayFontSize }]} numberOfLines={1}>
           {valueToRender}
         </Text>
       </View>
 
-      {/* --- History Sheet --- */}
       {isHistoryVisible && (
-        <Animated.View 
-            style={[
-                styles.historySheet, 
-                { 
-                    transform: [{ translateY: historySheetAnim }],
-                    opacity: historySheetOpacity,
-                }
-            ]}
+        <Animated.View
+          style={[
+            styles.historySheet,
+            {
+              transform: [{ translateY: historySheetAnim }],
+              opacity: historySheetOpacity,
+            },
+          ]}
         >
           <View style={styles.historyHeader}>
             <Text style={styles.historyTitle}>History</Text>
             <TouchableOpacity onPress={toggleHistorySheet}>
-                <XCircle size={s(24)} color="#FFF"/>
+              <CircleX size={s(24)} color="#FFF" />
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={styles.historyScrollContent}>
@@ -427,10 +444,10 @@ const Calculator = () => {
               <Text style={styles.noHistoryText}>No history yet.</Text>
             ) : (
               history.map((item) => (
-                <TouchableOpacity 
-                    key={item.id} 
-                    style={styles.historyItem}
-                    onPress={() => handleHistoryItemPress(item)}
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.historyItem}
+                  onPress={() => handleHistoryItemPress(item)}
                 >
                   <Text style={styles.historyExpression}>{item.expression}</Text>
                   <Text style={styles.historyResult}>= {formatNumberWithCommas(item.result)}</Text>
@@ -447,67 +464,111 @@ const Calculator = () => {
       )}
 
       <View style={styles.buttons}>
-        {/* Button Rows (structure remains the same) */}
         <View style={styles.row}>
-          <Button onPress={handleClear} text={displayValue==='0'&&!firstValue&&!operator&&!repeatOperator?"AC":"C"} color="#a5a5a5" textColor="#000" />
-          <Button onPress={handleBackspace} text={<Delete size={buttonSize*0.4} color="#000"/>} color="#a5a5a5" textColor="#000" />
+          <Button
+            onPress={handleClear}
+            text={displayValue === '0' && !firstValue && !operator && !repeatOperator ? "AC" : "C"}
+            color="#a5a5a5"
+            textColor="#000"
+          />
+          <Button
+            onPress={handleBackspace}
+            text={<Delete size={buttonSize * 0.4} color="#000" />}
+            color="#a5a5a5"
+            textColor="#000"
+          />
           <Button onPress={handlePercentage} text="%" color="#a5a5a5" textColor="#000" />
-          <Button onPress={()=>handleOperatorInput('/')} text="÷" color="#ff9f0a" isHighlighted={selectedOperator==='/'}/>
+          <Button
+            onPress={() => handleOperatorInput('/')}
+            text="÷"
+            color="#ff9f0a"
+            isHighlighted={selectedOperator === '/'}
+          />
         </View>
-        <View style={styles.row}><Button onPress={()=>handleNumberInput('7')} text="7" color="#333"/><Button onPress={()=>handleNumberInput('8')} text="8" color="#333"/><Button onPress={()=>handleNumberInput('9')} text="9" color="#333"/><Button onPress={()=>handleOperatorInput('*')} text="×" color="#ff9f0a" isHighlighted={selectedOperator==='*'}/></View>
-        <View style={styles.row}><Button onPress={()=>handleNumberInput('4')} text="4" color="#333"/><Button onPress={()=>handleNumberInput('5')} text="5" color="#333"/><Button onPress={()=>handleNumberInput('6')} text="6" color="#333"/><Button onPress={()=>handleOperatorInput('-')} text="-" color="#ff9f0a" isHighlighted={selectedOperator==='-'}/></View>
-        <View style={styles.row}><Button onPress={()=>handleNumberInput('1')} text="1" color="#333"/><Button onPress={()=>handleNumberInput('2')} text="2" color="#333"/><Button onPress={()=>handleNumberInput('3')} text="3" color="#333"/><Button onPress={()=>handleOperatorInput('+')} text="+" color="#ff9f0a" isHighlighted={selectedOperator==='+'}/></View>
-        <View style={styles.row}><Button onPress={()=>handleNumberInput('0')} text="0" color="#333" wide/><Button onPress={handleDecimal} text="." color="#333"/><Button onPress={handleEqual} text="=" color="#ff9f0a"/></View>
+        <View style={styles.row}>
+          <Button onPress={() => handleNumberInput('7')} text="7" color="#333" />
+          <Button onPress={() => handleNumberInput('8')} text="8" color="#333" />
+          <Button onPress={() => handleNumberInput('9')} text="9" color="#333" />
+          <Button
+            onPress={() => handleOperatorInput('*')}
+            text="×"
+            color="#ff9f0a"
+            isHighlighted={selectedOperator === '*'}
+          />
+        </View>
+        <View style={styles.row}>
+          <Button onPress={() => handleNumberInput('4')} text="4" color="#333" />
+          <Button onPress={() => handleNumberInput('5')} text="5" color="#333" />
+          <Button onPress={() => handleNumberInput('6')} text="6" color="#333" />
+          <Button
+            onPress={() => handleOperatorInput('-')}
+            text="-"
+            color="#ff9f0a"
+            isHighlighted={selectedOperator === '-'}
+          />
+        </View>
+        <View style={styles.row}>
+          <Button onPress={() => handleNumberInput('1')} text="1" color="#333" />
+          <Button onPress={() => handleNumberInput('2')} text="2" color="#333" />
+          <Button onPress={() => handleNumberInput('3')} text="3" color="#333" />
+          <Button
+            onPress={() => handleOperatorInput('+')}
+            text="+"
+            color="#ff9f0a"
+            isHighlighted={selectedOperator === '+'}
+          />
+        </View>
+        <View style={styles.row}>
+          <Button onPress={() => handleNumberInput('0')} text="0" color="#333" wide />
+          <Button onPress={handleDecimal} text="." color="#333" />
+          <Button onPress={() => handleEqual()} text="=" color="#ff9f0a"/>
+        </View>
       </View>
     </SafeAreaView>
   );
 };
 
-
-// --- Button Component ---
 interface ButtonProps {
   onPress: () => void;
-  text: string | JSX.Element; // Can be a string or a JSX element (like an icon)
+  text: string | JSX.Element;
   color: string;
-  textColor?: string; // Optional, defaults to '#fff'
-  wide?: boolean;     // Optional, for wider buttons like '0'
-  isHighlighted?: boolean; // Optional, for operator highlighting
+  textColor?: string;
+  wide?: boolean;
+  isHighlighted?: boolean;
 }
 
 const Button = ({ onPress, text, color, textColor = '#fff', wide, isHighlighted }: ButtonProps) => {
   let buttonBackgroundColor = color;
   if (isHighlighted) {
-    if (color === '#ff9f0a') buttonBackgroundColor = '#FFC880'; // Lighter orange
-    else if (color === '#a5a5a5') buttonBackgroundColor = '#d9d9d9'; // Lighter gray
-    else if (color === '#333') buttonBackgroundColor = '#737373'; // Lighter dark gray
+    if (color === '#ff9f0a') buttonBackgroundColor = '#FFC880';
+    else if (color === '#a5a5a5') buttonBackgroundColor = '#d9d9d9';
+    else if (color === '#333') buttonBackgroundColor = '#737373';
   }
 
-  // Styles for button size, specific to this component's logic
-  // buttonSize is a global constant defined earlier in your file
   const currentButtonSizeStyle = wide ? {} : { width: buttonSize, height: buttonSize };
-  // styles.buttonWide and styles.button are from your StyleSheet
   const wideButtonStyle = wide ? styles.buttonWide : {};
-
 
   return (
     <TouchableOpacity
       style={[
-        styles.button, // General button styles (like borderRadius, alignItems, justifyContent)
-        { backgroundColor: buttonBackgroundColor }, // Dynamic background color
-        currentButtonSizeStyle, // Applies width/height for non-wide buttons
-        wideButtonStyle         // Applies specific styles for wide buttons (like width, padding)
+        styles.button,
+        { backgroundColor: buttonBackgroundColor },
+        currentButtonSizeStyle,
+        wideButtonStyle,
       ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text 
+      <Text
         style={[
-          styles.buttonText, // General button text styles (like default color)
-          { 
-            color: textColor, 
-            // Font size scaled based on buttonSize (a global constant)
-            fontSize: (typeof text === 'string' && (text === "AC" || text === "C")) ? buttonSize * 0.35 : buttonSize * 0.45 
-          }
+          styles.buttonText,
+          {
+            color: textColor,
+            fontSize:
+              typeof text === 'string' && (text === 'AC' || text === 'C')
+                ? buttonSize * 0.35
+                : buttonSize * 0.45,
+          },
         ]}
       >
         {text}
@@ -516,21 +577,16 @@ const Button = ({ onPress, text, color, textColor = '#fff', wide, isHighlighted 
   );
 };
 
-
-// --- Styles (with additions for History and scaled values) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    // alignItems: 'center', // alignItems might conflict with history sheet positioning if absolute
-    // justifyContent: 'flex-end', // justifyContent might also conflict
   },
   headerControls: {
     flexDirection: 'row',
-    justifyContent: 'flex-start', // Position history icon to the right
+    justifyContent: 'flex-start',
     paddingHorizontal: s(15),
-    paddingTop: Platform.OS === 'ios' ? s(10) : s(15), // Space for status bar
-    // backgroundColor: '#1c1c1c', // Optional header bg
+    paddingTop: Platform.OS === 'ios' ? s(10) : s(15),
     width: '100%',
   },
   historyToggleButton: {
@@ -538,10 +594,10 @@ const styles = StyleSheet.create({
   },
   displayContainer: {
     width: calculatorWidth,
-    alignSelf: 'center', // Center it if container alignItems is removed
+    alignSelf: 'center',
     marginBottom: s(BASELINE_DISPLAY_CONTAINER_MARGIN_BOTTOM),
     paddingHorizontal: buttonMargin,
-    flex: 1, // Takes available space for display
+    flex: 1,
     justifyContent: 'flex-end',
   },
   display: {
@@ -551,7 +607,7 @@ const styles = StyleSheet.create({
   },
   buttons: {
     width: calculatorWidth,
-    alignSelf: 'center', // Center buttons
+    alignSelf: 'center',
     paddingBottom: s(BASELINE_BUTTONS_PADDING_BOTTOM),
   },
   row: {
@@ -562,38 +618,32 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: buttonSize / 1.8, // Slightly less round to maximize touch area with scaled margins
+    borderRadius: buttonSize / 1.8,
   },
   buttonWide: {
-    width: (buttonSize * 2) + buttonMargin,
+    width: buttonSize * 2 + buttonMargin,
     height: buttonSize,
     alignItems: 'flex-start',
     paddingLeft: buttonSize * 0.5,
-    borderRadius: buttonSize / 1.8, // Consistent rounding
+    borderRadius: buttonSize / 1.8,
   },
   buttonText: {
     color: '#fff',
   },
-  // History Sheet Styles
   historySheet: {
     position: 'absolute',
-    bottom: 0, // Starts at the bottom
+    bottom: 0,
     left: 0,
     right: 0,
-    height: BASELINE_HISTORY_SHEET_HEIGHT, // Use scaled or fixed height
-    backgroundColor: '#1e1e1e', // Darker shade for history
+    height: BASELINE_HISTORY_SHEET_HEIGHT,
+    backgroundColor: '#1e1e1e',
     borderTopLeftRadius: s(20),
     borderTopRightRadius: s(20),
     paddingVertical: s(10),
     paddingHorizontal: s(15),
-    zIndex: 10, // Ensure it's above buttons
-    // elevation: 5, // For Android shadow
-    // shadowColor: '#000', // For iOS shadow
-    // shadowOffset: { width: 0, height: -3 },
-    // shadowOpacity: 0.3,
-    // shadowRadius: 5,
+    zIndex: 10,
   },
-   historyHeader: {
+  historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -606,7 +656,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   historyScrollContent: {
-    paddingBottom: s(50), // Space for clear button if it's absolutely positioned or at end of scroll
+    paddingBottom: s(50),
   },
   historyItem: {
     paddingVertical: s(10),
@@ -630,12 +680,12 @@ const styles = StyleSheet.create({
     marginTop: s(30),
   },
   clearHistoryButton: {
-    position: 'absolute', // Position at bottom right of the sheet
+    position: 'absolute',
     bottom: s(15),
     right: s(15),
     paddingVertical: s(8),
     paddingHorizontal: s(12),
-    backgroundColor: '#c0392b', // Reddish color
+    backgroundColor: '#c0392b',
     borderRadius: s(5),
   },
   clearHistoryButtonText: {
