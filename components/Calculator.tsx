@@ -38,7 +38,7 @@ function useDisplayFontSize(value: string) {
   const [fontSize, setFontSize] = useState(80);
 
   useEffect(() => {
-    const baseSize = 80;
+    const baseSize = 70;
     const minSize = 30;
     const maxLength = 6; 
     const currentLength = value.length;
