@@ -1,97 +1,198 @@
 // components/Calculator.tsx
-import React, { JSX, useState } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  Dimensions, // Added for screen width
+  Dimensions,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useRouter } from 'expo-router'; // Removed as back button is removed
-import { Delete } from 'lucide-react-native'; // Kept for backspace
+import { Delete } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const calculatorWidth = screenWidth * 0.9; // Calculator will take 90% of screen width
+const calculatorWidth = screenWidth * 0.9;
 const buttonMargin = 5;
-const buttonSize = (calculatorWidth / 4) - (buttonMargin * 2); // Calculate button size based on new width
+const buttonSize = (calculatorWidth / 4) - (buttonMargin * 2);
+
+// Helper function to format numbers with commas
+function formatNumberWithCommas(numberString: string): string {
+  if (!numberString || numberString === 'Error' || numberString.toLowerCase().includes('e')) {
+    return numberString;
+  }
+  const parts = numberString.split('.');
+  const integerPart = parts[0];
+  const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+  const sign = integerPart.startsWith('-') ? '-' : '';
+  const numIntegerPart = sign ? integerPart.substring(1) : integerPart;
+  const formattedIntegerPart = numIntegerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return sign + formattedIntegerPart + decimalPart;
+}
+
+// Custom hook for calculating display font size
+function useDisplayFontSize(value: string) {
+  const { width } = useWindowDimensions();
+  const [fontSize, setFontSize] = useState(80);
+
+  useEffect(() => {
+    const baseSize = 80;
+    const minSize = 30;
+    const maxLength = 6; 
+    const currentLength = value.length;
+    
+    if (currentLength > maxLength) {
+      const scale = Math.max(maxLength / (currentLength * 1.2), 0.3);
+      setFontSize(Math.max(baseSize * scale, minSize));
+    } else {
+      setFontSize(baseSize);
+    }
+  }, [value, width]);
+
+  return fontSize;
+}
 
 const Calculator = () => {
   const [displayValue, setDisplayValue] = useState('0');
   const [operator, setOperator] = useState<string | null>(null);
   const [firstValue, setFirstValue] = useState('');
   const [waitingForSecondValue, setWaitingForSecondValue] = useState(false);
-  // const router = useRouter(); // Removed
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
+  
+  // New state for progressive equals
+  const [repeatOperand, setRepeatOperand] = useState<string | null>(null);
+  const [repeatOperator, setRepeatOperator] = useState<string | null>(null);
+
+  const fontSize = useDisplayFontSize(formatNumberWithCommas(displayValue)); // Pass formatted for length check if needed
 
   const handleNumberInput = (num: string) => {
-    if (displayValue.length >= 9 && !waitingForSecondValue) return; // Limit display length before new number
+    const maxDigits = 12;
 
     if (waitingForSecondValue) {
-      setDisplayValue(num);
-      setWaitingForSecondValue(false);
+        setDisplayValue(num);
+        setWaitingForSecondValue(false);
+        // When entering the second number, a progressive equals chain isn't active yet,
+        // so no need to clear repeatOperand/repeatOperator here.
     } else {
-      setDisplayValue(displayValue === '0' ? num : displayValue + num);
+        // If an operator is NOT active AND a repeat operation was possible (repeatOperator is set),
+        // it means a result was on display. A new number input should overwrite it and clear repeat state.
+        if (!operator && repeatOperator) {
+            setDisplayValue(num);
+            setFirstValue(''); // New number sequence is starting
+            setRepeatOperand(null);
+            setRepeatOperator(null);
+        } else if (displayValue === '0' && num === '0' && !displayValue.includes('.')) {
+            // Prevent "00" if not "0."
+            return;
+        } else if (displayValue === '0' && num !== '.') {
+             // If display is "0" (and not "0."), replace with new num.
+            setDisplayValue(num);
+            setFirstValue(''); 
+            setRepeatOperand(null); // Clear repeat state as new number is being entered
+            setRepeatOperator(null);
+        } else {
+            // Append digit if not overwriting and within max digit limit
+            if (displayValue.length < maxDigits) {
+                setDisplayValue(displayValue + num);
+            }
+            // If appending and no operator is set, we are building the first number of a new calculation.
+            // Ensure repeat state is clear if it wasn't handled by the overwrite logic.
+            if (!operator) {
+                setRepeatOperand(null);
+                setRepeatOperator(null);
+            }
+        }
     }
   };
 
   const handleOperatorInput = (op: string) => {
-    if (operator && !waitingForSecondValue) { // If an operator is already set and we are not waiting for a second value
-        handleEqual(); // Calculate the current expression first
-        setFirstValue(displayValue); // Then set the new first value
-    } else {
-        setFirstValue(displayValue);
+    // New operator selected, clear any progressive equals state
+    setRepeatOperand(null);
+    setRepeatOperator(null);
+
+    if (operator && !waitingForSecondValue && firstValue !== '' && displayValue !== 'Error') {
+      // Calculate current expression first (e.g., 5 * 2 + ...)
+      // handleEqual will update displayValue.
+      handleEqual(); 
+      setFirstValue(displayValue); // Result of previous calc is new firstValue
+    } else if (displayValue !== 'Error') {
+      setFirstValue(displayValue);
     }
-    setOperator(op);
-    setWaitingForSecondValue(true);
-    setSelectedOperator(op);
+
+    if (displayValue !== 'Error') {
+      setOperator(op);
+      setWaitingForSecondValue(true);
+      setSelectedOperator(op);
+    }
   };
 
   const handleEqual = () => {
-    if (operator && firstValue && displayValue) { // ensure displayValue is also present
-      const num1 = parseFloat(firstValue);
-      const num2 = parseFloat(displayValue);
-      let result = 0;
+    let num1: number, num2: number;
+    let opToExecute: string | null = null;
+    let isError = false;
 
-      switch (operator) {
-        case '+':
-          result = num1 + num2;
-          break;
-        case '-':
-          result = num1 - num2;
-          break;
-        case '*':
-          result = num1 * num2;
-          break;
-        case '/':
-          if (num2 === 0) {
-            setDisplayValue('Error');
-            // Reset state after error
-            setOperator(null);
-            setFirstValue('');
-            setWaitingForSecondValue(false);
-            setSelectedOperator(null);
-            return;
-          }
-          result = num1 / num2;
-          break;
-        default:
-          return;
-      }
-      // Format result: limit decimals, handle large numbers potentially with toExponential
-      let resultString = parseFloat(result.toFixed(7)).toString(); // Limit to 7 decimal places and remove trailing zeros
-      if (resultString.length > 9 && Math.abs(result) > 1e-7) { // Check length again and ensure not too small
-          resultString = result.toExponential(2); // Use exponential for very large/small numbers
-      }
+    // Scenario 1: Standard calculation (e.g., firstValue op displayValue =)
+    if (operator && firstValue && displayValue !== 'Error') {
+      num1 = parseFloat(firstValue);
+      num2 = parseFloat(displayValue);
+      opToExecute = operator;
 
-      setDisplayValue(resultString);
-      setOperator(null);
-      // setFirstValue(resultString); // Keep result as firstValue for chained operations
-      setWaitingForSecondValue(false); // Set to false, so next number input starts a new displayValue
-      setSelectedOperator(null);
+      // Store the second operand and operator for potential repeat
+      setRepeatOperand(displayValue);
+      setRepeatOperator(operator);
     }
+    // Scenario 2: Progressive (repeat) calculation (currentDisplayValue repeatOp repeatOperand =)
+    else if (!operator && repeatOperator && repeatOperand && displayValue !== 'Error') {
+      num1 = parseFloat(displayValue); // Current displayValue (previous result) is num1
+      num2 = parseFloat(repeatOperand);   // The stored second operand
+      opToExecute = repeatOperator;      // The stored operator
+      // repeatOperand and repeatOperator are kept for further presses of "="
+    } else {
+      // Nothing to calculate (e.g., pressing "=" repeatedly without a valid setup)
+      return;
+    }
+
+    let result = 0;
+    switch (opToExecute) {
+      case '+': result = num1 + num2; break;
+      case '-': result = num1 - num2; break;
+      case '*': result = num1 * num2; break;
+      case '/':
+        if (num2 === 0) {
+          setDisplayValue('Error');
+          isError = true;
+        } else {
+          result = num1 / num2;
+        }
+        break;
+      default:
+        return; // Should not happen if opToExecute is set
+    }
+
+    if (isError) {
+      setOperator(null);
+      setFirstValue('');
+      setSelectedOperator(null);
+      setWaitingForSecondValue(false);
+      setRepeatOperand(null); // Clear repeat state on error
+      setRepeatOperator(null);
+      return;
+    }
+
+    let finalDisplayString: string;
+    if (Math.abs(result) >= 1e9 || (Math.abs(result) < 0.000001 && result !== 0)) {
+      finalDisplayString = result.toExponential(2);
+    } else {
+      finalDisplayString = parseFloat(result.toFixed(7)).toString();
+    }
+
+    setDisplayValue(finalDisplayString);
+    setFirstValue(finalDisplayString); // The result becomes the new firstValue for chaining or next repeat
+    setOperator(null); // Operator is consumed by equals
+    setSelectedOperator(null);
+    setWaitingForSecondValue(false);
   };
 
   const handleClear = () => {
@@ -100,90 +201,135 @@ const Calculator = () => {
     setFirstValue('');
     setWaitingForSecondValue(false);
     setSelectedOperator(null);
+    // Reset repeat state
+    setRepeatOperand(null);
+    setRepeatOperator(null);
   };
 
   const handleBackspace = () => {
-    if (displayValue === 'Error' || waitingForSecondValue) return; // Don't backspace on error or when operator is just pressed
+    if (displayValue === 'Error' || waitingForSecondValue) return;
+    
+    // When backspacing, if a repeat operation was pending, it should be invalidated
+    // if the displayValue (which might be a result) is altered.
+    if(!waitingForSecondValue && !operator){ // Potentially after an equals
+        setRepeatOperand(null);
+        setRepeatOperator(null);
+    }
+
     setDisplayValue(displayValue.slice(0, -1) || '0');
   };
 
   const handlePercentage = () => {
     if (displayValue === 'Error') return;
+    // Percentage calculation should clear repeat state as it's a distinct operation
+    setRepeatOperand(null);
+    setRepeatOperator(null);
+
     let currentValue = parseFloat(displayValue);
-    if (operator && firstValue) { // Calculate percentage based on the first value if an operation is pending
-        const firstNum = parseFloat(firstValue);
+    if (operator && firstValue) {
+      const firstNum = parseFloat(firstValue);
+      if (operator === '+' || operator === '-') {
         currentValue = (firstNum * currentValue) / 100;
-    } else {
+      } else {
         currentValue = currentValue / 100;
+      }
+    } else {
+      currentValue = currentValue / 100;
     }
-    setDisplayValue(parseFloat(currentValue.toFixed(7)).toString());
+    const finalResult = parseFloat(currentValue.toFixed(7)).toString();
+    setDisplayValue(finalResult);
+    // setFirstValue(finalResult); // iOS calculator usually doesn't make this the new firstValue for chaining immediately
+    setWaitingForSecondValue(false); // Or true if it expects an operator next? iOS seems to allow further ops.
+                                     // For now, matches your existing logic.
   };
 
   const handleDecimal = () => {
-    if (waitingForSecondValue) { // If an operator was just pressed, start new number with "0."
+    // If a repeat operation was pending and user starts adding a decimal to the result,
+    // it implies modification and the start of a new number.
+    if (!operator && repeatOperator) {
+        // Display already holds the result. Adding decimal means modifying it.
+        // Treat as new number input.
+        setDisplayValue(displayValue + '.'); // Start with current result + decimal
+        setFirstValue(displayValue); // The result was the first value
+        setRepeatOperand(null);
+        setRepeatOperator(null);
+        // waitingForSecondValue should be false
+    } else if (waitingForSecondValue) {
         setDisplayValue('0.');
         setWaitingForSecondValue(false);
-        return;
-    }
-    if (!displayValue.includes('.')) {
+    } else if (!displayValue.includes('.')) {
       setDisplayValue(displayValue + '.');
     }
+    // No explicit clearing of repeat state here if just adding to a fresh number,
+    // handleNumberInput would have cleared it if it was an overwrite.
   };
 
+  const valueToRender = formatNumberWithCommas(displayValue);
 
   return (
-    // Using edges to handle safe area, especially for the bottom
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar style="light" />
-      {/* Header with back button removed */}
       <View style={styles.displayContainer}>
-        <Text style={styles.display} numberOfLines={1} adjustsFontSizeToFit>
-          {displayValue}
+        <Text
+          style={[styles.display, { fontSize }]}
+          numberOfLines={1}
+        >
+          {valueToRender}
         </Text>
       </View>
       <View style={styles.buttons}>
         <View style={styles.row}>
-          <Button onPress={handleClear} text={displayValue === '0' && !firstValue ? "AC" : "C"} color="#a5a5a5" textColor="#000" />
-          <Button onPress={handleBackspace} text={<Delete size={buttonSize * 0.4} color="#000" />} color="#a5a5a5" textColor="#000" />
+          <Button 
+            onPress={handleClear} 
+            text={displayValue === '0' && !firstValue && !operator && !repeatOperator ? "AC" : "C"} 
+            color="#a5a5a5" 
+            textColor="#000" 
+          />
+          <Button 
+            onPress={handleBackspace} 
+            text={<Delete size={buttonSize * 0.4} color="#000" />} 
+            color="#a5a5a5" 
+            textColor="#000" 
+          />
           <Button onPress={handlePercentage} text="%" color="#a5a5a5" textColor="#000" />
-          <Button
-            onPress={() => handleOperatorInput('/')}
-            text="÷"
-            color="#ff9f0a"
-            isHighlighted={selectedOperator === '/'}
+          <Button 
+            onPress={() => handleOperatorInput('/')} 
+            text="÷" 
+            color="#ff9f0a" 
+            isHighlighted={selectedOperator === '/'} 
           />
         </View>
         <View style={styles.row}>
           <Button onPress={() => handleNumberInput('7')} text="7" color="#333" />
           <Button onPress={() => handleNumberInput('8')} text="8" color="#333" />
           <Button onPress={() => handleNumberInput('9')} text="9" color="#333" />
-          <Button
-            onPress={() => handleOperatorInput('*')}
-            text="×"
-            color="#ff9f0a"
-            isHighlighted={selectedOperator === '*'}
+          <Button 
+            onPress={() => handleOperatorInput('*')} 
+            text="×" 
+            color="#ff9f0a" 
+            isHighlighted={selectedOperator === '*'} 
           />
         </View>
         <View style={styles.row}>
           <Button onPress={() => handleNumberInput('4')} text="4" color="#333" />
           <Button onPress={() => handleNumberInput('5')} text="5" color="#333" />
           <Button onPress={() => handleNumberInput('6')} text="6" color="#333" />
-          <Button
-            onPress={() => handleOperatorInput('-')}
-            text="-"
-            color="#ff9f0a"
-            isHighlighted={selectedOperator === '-'}
+          <Button 
+            onPress={() => handleOperatorInput('-')} 
+            text="-" 
+            color="#ff9f0a" 
+            isHighlighted={selectedOperator === '-'} 
           />
         </View>
         <View style={styles.row}>
           <Button onPress={() => handleNumberInput('1')} text="1" color="#333" />
           <Button onPress={() => handleNumberInput('2')} text="2" color="#333" />
           <Button onPress={() => handleNumberInput('3')} text="3" color="#333" />
-          <Button
-            onPress={() => handleOperatorInput('+')}
-            text="+"
-            color="#ff9f0a"
-            isHighlighted={selectedOperator === '+'}
+          <Button 
+            onPress={() => handleOperatorInput('+')} 
+            text="+" 
+            color="#ff9f0a" 
+            isHighlighted={selectedOperator === '+'} 
           />
         </View>
         <View style={styles.row}>
@@ -191,8 +337,6 @@ const Calculator = () => {
           <Button onPress={handleDecimal} text="." color="#333" />
           <Button onPress={handleEqual} text="=" color="#ff9f0a" />
         </View>
-        {/* Empty row for spacing can be achieved by adjusting paddingBottom in styles.buttons or adding a View */}
-        {/* Or directly adjusting SafeAreaView edges like `edges={['bottom']}` if that's preferred over an empty visual row */}
       </View>
     </SafeAreaView>
   );
@@ -207,78 +351,86 @@ interface ButtonProps {
   isHighlighted?: boolean;
 }
 
-const Button = ({ onPress, text, color, textColor = '#fff', wide, isHighlighted }: ButtonProps) => (
-  <TouchableOpacity
-    style={[
-      styles.button,
-      { backgroundColor: isHighlighted ? '#D98F07' : color }, // Darker highlight for orange buttons
-      wide ? styles.buttonWide : { width: buttonSize, height: buttonSize },
-      (text === "÷" || text === "×" || text === "-" || text === "+" || text === "=") && isHighlighted && styles.operatorHighlighted,
+const Button = ({ onPress, text, color, textColor = '#fff', wide, isHighlighted }: ButtonProps) => {
+  let buttonBackgroundColor = color;
+  if (isHighlighted) {
+    if (color === '#ff9f0a') {
+      buttonBackgroundColor = '#FFC880';
+    } else if (color === '#a5a5a5') {
+      buttonBackgroundColor = '#d9d9d9';
+    } else if (color === '#333') {
+      buttonBackgroundColor = '#737373';
+    }
+  }
 
-    ]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <Text style={[styles.buttonText, { color: textColor, fontSize: buttonSize * 0.45 }]}>{text}</Text>
-  </TouchableOpacity>
-);
+  return (
+    <TouchableOpacity
+      style={[
+        styles.button,
+        { backgroundColor: buttonBackgroundColor },
+        wide ? styles.buttonWide : { width: buttonSize, height: buttonSize },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text 
+        style={[
+          styles.buttonText, 
+          { 
+            color: textColor, 
+            fontSize: text === "AC" || text === "C" ? buttonSize * 0.35 : buttonSize * 0.45 
+          }
+        ]}
+      >
+        {text}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    alignItems: 'center', // Center the calculator content
-    justifyContent: 'flex-end', // Align content (display & buttons) to the bottom
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
-  // Removed header style as back button is gone
-  displayContainer: { // New container to manage display width and alignment
+  displayContainer: {
     width: calculatorWidth,
-    marginBottom: 10, // Space between display and buttons
-    paddingHorizontal: buttonMargin * 2, // Consistent padding with buttons
-    flex: 1, // Allow display to take remaining space
-    justifyContent: 'flex-end', // Align text to bottom of this container
+    marginBottom: 20,
+    paddingHorizontal: buttonMargin,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   display: {
-    fontSize: 80, // Max font size
     color: '#fff',
     textAlign: 'right',
-    fontWeight: '200', // iOS calculator uses a light font weight
-    // No fixed height, adjustsFontSizeToFit will handle it
+    fontWeight: '200', // Or your preferred font weight
   },
   buttons: {
-    width: calculatorWidth, // Set fixed width for the buttons container
-    paddingBottom: Platform.OS === 'ios' ? 20 : 20, // Added padding for bottom spacing (adjust as needed)
+    width: calculatorWidth,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Use space-between for even spacing within the fixed width
-    marginBottom: buttonMargin * 2, // Space between rows
+    justifyContent: 'space-between',
+    marginBottom: buttonMargin * 2.5,
   },
   button: {
-    // width and height are now dynamic based on buttonSize
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: buttonSize / 2, // Make it circular
-    // marginHorizontal is removed, space-between in row handles it
+    borderRadius: buttonSize / 2,
   },
   buttonWide: {
-    width: (buttonSize * 2) + (buttonMargin * 2), // 0 button takes space of 2 buttons + one margin
+    width: (buttonSize * 2) + (buttonMargin * 2.5),
     height: buttonSize,
-    borderRadius: buttonSize / 2, // Keep circular ends if desired, or adjust
-    alignItems: 'flex-start', // Align text to the left for wide button
-    paddingLeft: buttonSize * 0.6, // Indent text for wide button
+    borderRadius: buttonSize / 2,
+    alignItems: 'flex-start',
+    paddingLeft: buttonSize * 0.55,
   },
   buttonText: {
-    // fontSize is now dynamic
-    color: '#fff', // Default color, overridden by props if needed
+    color: '#fff',
   },
-  buttonHighlighted: { // General highlight, maybe for non-operator buttons if needed later
-     opacity: 0.8,
-  },
-  operatorHighlighted: { // Specific style for orange operator highlight (iOS style)
-    backgroundColor: '#FFC880', // Lighter orange for highlighted state
-    // color: '#ff9f0a' // Text color changes to the original background (optional)
-  }
 });
 
 export default Calculator;
