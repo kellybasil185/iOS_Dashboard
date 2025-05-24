@@ -54,7 +54,7 @@ export default function Dashboard() {
       <DashboardHeader />
 
       {/* Measure grid height */}
-      <View style={{ flex: 0.46 }} onLayout={handleGridLayout}>
+      <View style={{ flex: 0.6 }} onLayout={handleGridLayout}>
         <CategoryGrid />
       </View>
 
