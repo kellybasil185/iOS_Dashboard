@@ -1,47 +1,75 @@
-// app/dashboard.tsx
-import React, { useState } from 'react';
-import { 
-  SafeAreaView, 
-  StyleSheet, 
+// Updated Dashboard Layout: app/dashboard.tsx
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  SafeAreaView,
+  StyleSheet,
   useColorScheme,
   TouchableOpacity,
-  View // View might not be explicitly needed if not used directly
+  View,
+  ScrollView,
+  LayoutChangeEvent
 } from 'react-native';
 import DashboardHeader from '@/components/DashboardHeader';
 import CategoryGrid from '@/components/CategoryGrid';
-import { getStatusBarHeight } from '@/utils/statusBar'; // Ensure this path is correct
-import Calculator from '@/components/Calculator'; // Ensure this path is correct
+import { getStatusBarHeight } from '@/utils/statusBar';
+import Calculator from '@/components/Calculator';
 import { Calculator as CalculatorIcon } from 'lucide-react-native';
+import NotificationWidget from '@/components/NotificationWidget';
+import { categories } from '@/utils/data';
+
+const numColumns = 2;
+const numRows = Math.ceil(categories.length / numColumns);
 
 export default function Dashboard() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(false);
+  const [gridHeight, setGridHeight] = useState(0);
 
   const toggleCalculator = () => {
-    setIsCalculatorVisible(!isCalculatorVisible);
+    setIsCalculatorVisible(prev => !prev);
   };
-  
+
+  // Calculate height for two rows of the category grid
+  const rowHeight = useMemo(() => {
+    return (gridHeight && numRows && typeof gridHeight === 'number' && gridHeight > 0) ? gridHeight / numRows : 0;
+  }, [gridHeight, numRows]);
+
+  const notificationHeight = useMemo(() => {
+    return rowHeight * 2.5;
+  }, [rowHeight]);
+
+  const handleGridLayout = useCallback((event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout;
+    if (typeof height === 'number' && height > 0) {
+      setGridHeight(height);
+    }
+  }, []);
+
   return (
     <SafeAreaView style={[
-      styles.container, 
+      styles.container,
       { backgroundColor: isDark ? '#000' : '#F2F2F7' }
     ]}>
-      {/* Conditionally render DashboardHeader and CategoryGrid */}
-      {!isCalculatorVisible && (
-        <>
-          <DashboardHeader />
-          <CategoryGrid />
-        </>
-      )}
-      
-      {/* The Calculator toggle button remains visible */}
-      {/* You might want to adjust its style or hide it if the calculator is open, depending on UX preference */}
+      <DashboardHeader />
+
+      {/* Measure grid height */}
+      <View style={{ flex: 0.46 }} onLayout={handleGridLayout}>
+        <CategoryGrid />
+      </View>
+
+      {/* Notifications below CategoryGrid, height = two grid rows */}
+      <View style={[
+        styles.notificationsContainer,
+        { height: notificationHeight, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }
+      ]}>
+        <NotificationWidget />
+      </View>
+
       <TouchableOpacity style={styles.calculatorButton} onPress={toggleCalculator}>
         <CalculatorIcon color={isDark ? '#fff' : '#000'} size={24} />
       </TouchableOpacity>
-      
-      {/* Render the Calculator component */}
+
       {isCalculatorVisible && (
         <View style={styles.calculatorContainer}>
           <Calculator />
@@ -54,25 +82,35 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // paddingTop is removed here if Calculator handles its own safe area, 
-    // or if you want DashboardHeader to be inside the safe area padding.
-    // The original paddingTop: getStatusBarHeight() might be better applied
-    // inside the conditional block for dashboard content.
   },
-  // Style for the calculator container to ensure it overlays or fills correctly
+  content: {
+    flex: 1,
+  },
+  notificationsContainer: {
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    // NotificationWidget scrolls internally
+  },
+  weatherContainer: {
+    marginBottom: 16,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+  },
   calculatorContainer: {
-    ...StyleSheet.absoluteFillObject, // Makes the calculator fill the SafeAreaView
-    zIndex: 10, // Ensure calculator is on top if other elements are not hidden
-    // backgroundColor might be set by Calculator component itself
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
   },
   calculatorButton: {
     position: 'absolute',
-    top: getStatusBarHeight() + 16, // Position based on status bar height
+    top: getStatusBarHeight() + 16,
     right: 16,
     padding: 10,
     borderRadius: 50,
-    zIndex: 20, // Ensure button is above the calculator if it's an overlay
-                // and also above dashboard content.
-    // Consider changing background or style if calculator is open for better UX
+    zIndex: 20,
   },
 });
+
+// Now NotificationWidget occupies exactly two rows worth of CategoryGrid height.
