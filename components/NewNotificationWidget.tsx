@@ -59,7 +59,6 @@ export default function NewNotificationWidget() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedSource, setSelectedSource] = useState<string>('');
-  const [swipedSource, setSwipedSource] = useState<string | null>(null);
   const translateX = useSharedValue(0);
   const deleteButtonWidth = 80;
 
@@ -102,51 +101,29 @@ export default function NewNotificationWidget() {
       setNotifications((prev) =>
         prev.filter((notification) => notification.source !== source)
       );
-      setSwipedSource(null);
       translateX.value = withSpring(0);
     },
     [translateX]
   );
 
-  const createGesture = (source: string) =>
-    Gesture.Pan()
-      .activeOffsetX(-10)
-      .onBegin(() => {
-        if (swipedSource && swipedSource !== source) {
-          translateX.value = withSpring(0);
-          runOnJS(setSwipedSource)(null);
-        }
-      })
-      .onUpdate((event) => {
-        if (swipedSource === null || swipedSource === source) {
-          const newValue = Math.min(0, Math.max(-deleteButtonWidth, event.translationX));
-          translateX.value = newValue;
-          if (newValue < 0 && swipedSource !== source) {
-            runOnJS(setSwipedSource)(source);
-          }
-        }
-      })
-      .onEnd(() => {
-        const shouldDelete = translateX.value < -deleteButtonWidth / 2;
-        if (shouldDelete) {
-          runOnJS(handleDeleteSource)(source);
-        } else {
-          translateX.value = withSpring(0);
-          runOnJS(setSwipedSource)(null);
-        }
-      });
+  const gesture = Gesture.Pan()
+    .activeOffsetX(-10)
+    .onUpdate((event) => {
+      const newValue = Math.min(0, Math.max(-deleteButtonWidth, event.translationX));
+      translateX.value = newValue;
+    })
+    .onEnd(() => {
+      const shouldDelete = translateX.value < -deleteButtonWidth / 2;
+      if (shouldDelete) {
+        runOnJS(handleDeleteSource)(selectedSource);
+      } else {
+        translateX.value = withSpring(0);
+      }
+    });
 
-  const getAnimatedStyle = (source: string) =>
-    useAnimatedStyle(() => ({
-      transform: [
-        {
-          translateX:
-            swipedSource === source || swipedSource === null
-              ? translateX.value
-              : 0,
-        },
-      ],
-    }));
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   const renderSourceSummary = (source: string) => {
     const sourceNotifications = getSourceNotifications(source);
@@ -165,14 +142,14 @@ export default function NewNotificationWidget() {
 
     return (
       <View key={source} style={styles.sourceContainer}>
-        <GestureDetector gesture={createGesture(source)}>
+        <GestureDetector gesture={gesture}>
           <Animated.View
             style={[
               styles.sourceSummary,
               {
-                backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
               },
-              getAnimatedStyle(source),
+              animatedStyle,
             ]}
           >
             <TouchableOpacity
@@ -279,14 +256,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     height: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   summaryContent: {
     flexDirection: 'row',
