@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -68,34 +68,6 @@ export default function NewNotificationWidget() {
     setNotifications(mockNotifications);
   }, []);
 
-  const getSourceNotifications = (source: string) => {
-    return notifications.filter((n) => n.source === source);
-  };
-
-  const getLatestNotification = (source: string) => {
-    return notifications
-      .filter((n) => n.source === source)
-      .sort(
-        (a, b) =>
-          new Date(b.received_at).getTime() - new Date(a.received_at).getTime()
-      )[0];
-  };
-
-  const formatTimestamp = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-
-    if (minutes < 60) {
-      return `${minutes}m ago`;
-    } else if (minutes < 1440) {
-      return `${Math.floor(minutes / 60)}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
   const handleDeleteSource = useCallback(
     (source: string) => {
       console.log(`Deleting notifications for ${source}`);
@@ -108,7 +80,7 @@ export default function NewNotificationWidget() {
     [translateX]
   );
 
-  const createGesture = (source: string) =>
+  const createGesture = useCallback((source: string) =>
     Gesture.Pan()
       .activeOffsetX(-10)
       .onBegin(() => {
@@ -134,102 +106,155 @@ export default function NewNotificationWidget() {
           translateX.value = withSpring(0);
           runOnJS(setSwipedSource)(null);
         }
-      });
+      }),
+    [swipedSource, translateX, handleDeleteSource, deleteButtonWidth]
+  );
 
-  const getAnimatedStyle = (source: string) =>
-    useAnimatedStyle(() => ({
-      transform: [
-        {
-          translateX:
-            swipedSource === source || swipedSource === null
-              ? translateX.value
-              : 0,
-        },
-      ],
-    }));
+  const getAnimatedStyle = useCallback(
+    (source: string) =>
+      useAnimatedStyle(() => ({
+        transform: [
+          {
+            translateX:
+              swipedSource === source || swipedSource === null
+                ? translateX.value
+                : 0,
+          },
+        ],
+      })),
+    [swipedSource, translateX]
+  );
 
-  const renderSourceSummary = (source: string) => {
-    const sourceNotifications = getSourceNotifications(source);
-    if (sourceNotifications.length === 0) return null;
+  const getSourceNotifications = useCallback(
+    (source: string) => {
+      return notifications.filter((n) => n.source === source);
+    },
+    [notifications]
+  );
 
-    const latest = getLatestNotification(source);
-    const uniqueChats =
-      source === 'Telegram'
-        ? new Set(sourceNotifications.map((n) => n.chat_title)).size
-        : null;
+  const getLatestNotification = useCallback(
+    (source: string) => {
+      return notifications
+        .filter((n) => n.source === source)
+        .sort(
+          (a, b) =>
+            new Date(b.received_at).getTime() - new Date(a.received_at).getTime()
+        )[0];
+    },
+    [notifications]
+  );
 
-    const summaryText =
-      source === 'Telegram'
-        ? `${sourceNotifications.length} new messages from ${uniqueChats} distinct chats`
-        : `${sourceNotifications.length} new alerts`;
+  const formatTimestamp = useCallback((dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
 
-    return (
-      <View key={source} style={styles.sourceContainer}>
-        <GestureDetector gesture={createGesture(source)}>
-          <Animated.View
-            style={[
-              styles.sourceSummary,
-              {
-                backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
-              },
-              getAnimatedStyle(source),
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.summaryContent}
-              onPress={() => {
-                setSelectedSource(source);
-                setIsModalVisible(true);
-              }}
+    if (minutes < 60) {
+      return `${minutes}m ago`;
+    } else if (minutes < 1440) {
+      return `${Math.floor(minutes / 60)}h ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  }, []);
+
+  const renderSourceSummary = useCallback(
+    (source: string) => {
+      const sourceNotifications = getSourceNotifications(source);
+      if (sourceNotifications.length === 0) return null;
+
+      const latest = getLatestNotification(source);
+      const uniqueChats =
+        source === 'Telegram'
+          ? new Set(sourceNotifications.map((n) => n.chat_title)).size
+          : null;
+
+      const summaryText =
+        source === 'Telegram'
+          ? `${sourceNotifications.length} new messages from ${uniqueChats} distinct chats`
+          : `${sourceNotifications.length} new alerts`;
+
+      const animatedStyle = getAnimatedStyle(source);
+      const gesture = createGesture(source);
+
+      return (
+        <View key={source} style={styles.sourceContainer}>
+          <GestureDetector gesture={gesture}>
+            <Animated.View
+              style={[
+                styles.sourceSummary,
+                {
+                  backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+                },
+                animatedStyle,
+              ]}
             >
-              <Image
-                source={
-                  source === 'Telegram'
-                    ? require('@/assets/icons/telegram.png')
-                    : require('@/assets/icons/tradingview.png')
-                }
-                style={styles.sourceIcon}
-              />
-              <View style={styles.summaryTextContainer}>
-                <Text
-                  style={[
-                    styles.sourceName,
-                    { color: isDark ? '#FFFFFF' : '#000000' },
-                  ]}
-                >
-                  {source}
-                </Text>
-                <Text
-                  style={[
-                    styles.summaryText,
-                    { color: isDark ? '#8E8E93' : '#8E8E93' },
-                  ]}
-                >
-                  {summaryText}
-                </Text>
-                <Text
-                  style={[
-                    styles.timestamp,
-                    { color: isDark ? '#8E8E93' : '#8E8E93' },
-                  ]}
-                >
-                  Latest: {formatTimestamp(latest.received_at)}
-                </Text>
-              </View>
+              <TouchableOpacity
+                style={styles.summaryContent}
+                onPress={() => {
+                  setSelectedSource(source);
+                  setIsModalVisible(true);
+                }}
+              >
+                <Image
+                  source={
+                    source === 'Telegram'
+                      ? require('@/assets/icons/telegram.png')
+                      : require('@/assets/icons/tradingview.png')
+                  }
+                  style={styles.sourceIcon}
+                />
+                <View style={styles.summaryTextContainer}>
+                  <Text
+                    style={[
+                      styles.sourceName,
+                      { color: isDark ? '#FFFFFF' : '#000000' },
+                    ]}
+                  >
+                    {source}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.summaryText,
+                      { color: isDark ? '#8E8E93' : '#8E8E93' },
+                    ]}
+                  >
+                    {summaryText}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.timestamp,
+                      { color: isDark ? '#8E8E93' : '#8E8E93' },
+                    ]}
+                  >
+                    Latest: {formatTimestamp(latest.received_at)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </GestureDetector>
+          <View style={styles.deleteButtonContainer}>
+            <TouchableOpacity
+              style={[styles.deleteButton]}
+              onPress={() => handleDeleteSource(source)}
+            >
+              <Trash2 color="#FFFFFF" size={24} />
             </TouchableOpacity>
-          </Animated.View>
-        </GestureDetector>
-        <View style={styles.deleteButtonContainer}>
-          <TouchableOpacity
-            style={[styles.deleteButton]}
-            onPress={() => handleDeleteSource(source)}
-          >
-            <Trash2 color="#FFFFFF" size={24} />
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [
+      getSourceNotifications,
+      getLatestNotification,
+      getAnimatedStyle,
+      createGesture,
+      isDark,
+      handleDeleteSource,
+      formatTimestamp,
+    ]
+  );
 
   if (notifications.length === 0) {
     return (
