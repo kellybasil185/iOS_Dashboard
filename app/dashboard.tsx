@@ -7,14 +7,14 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  LayoutChangeEvent
+  LayoutChangeEvent,
 } from 'react-native';
 import DashboardHeader from '@/components/DashboardHeader';
 import CategoryGrid from '@/components/CategoryGrid';
 import { getStatusBarHeight } from '@/utils/statusBar';
 import Calculator from '@/components/Calculator';
 import { Calculator as CalculatorIcon } from 'lucide-react-native';
-import NotificationWidget from '@/components/NotificationWidget';
+import NewNotificationWidget from '@/components/NewNotificationWidget';
 import { categories } from '@/utils/data';
 
 const numColumns = 2;
@@ -27,12 +27,14 @@ export default function Dashboard() {
   const [gridHeight, setGridHeight] = useState(0);
 
   const toggleCalculator = () => {
-    setIsCalculatorVisible(prev => !prev);
+    setIsCalculatorVisible((prev) => !prev);
   };
 
   // Calculate height for two rows of the category grid
   const rowHeight = useMemo(() => {
-    return (gridHeight && numRows && typeof gridHeight === 'number' && gridHeight > 0) ? gridHeight / numRows : 0;
+    return gridHeight && numRows && typeof gridHeight === 'number' && gridHeight > 0
+      ? gridHeight / numRows
+      : 0;
   }, [gridHeight, numRows]);
 
   const notificationHeight = useMemo(() => {
@@ -47,10 +49,9 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <SafeAreaView style={[
-      styles.container,
-      { backgroundColor: isDark ? '#000' : '#F2F2F7' }
-    ]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: isDark ? '#000' : '#F2F2F7' }]}
+    >
       <DashboardHeader />
 
       {/* Measure grid height */}
@@ -59,11 +60,13 @@ export default function Dashboard() {
       </View>
 
       {/* Notifications below CategoryGrid, height = two grid rows */}
-      <View style={[
-        styles.notificationsContainer,
-        { height: notificationHeight, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }
-      ]}>
-        <NotificationWidget />
+      <View
+        style={[
+          styles.notificationsContainer,
+          { height: notificationHeight, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+        ]}
+      >
+        <NewNotificationWidget />
       </View>
 
       <TouchableOpacity style={styles.calculatorButton} onPress={toggleCalculator}>
@@ -112,5 +115,3 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
 });
-
-// Now NotificationWidget occupies exactly two rows worth of CategoryGrid height.
