@@ -94,7 +94,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginHorizontal: 16,
-    // NotificationWidget scrolls internally
   },
   weatherContainer: {
     marginBottom: 16,
