@@ -46,7 +46,7 @@ export default function Dashboard() {
       </View>
 
       {/* Placeholder for any other widget — also 1 part */}
-      <View style={{ flex: 0 }}>
+      <View style={{ flex: 0.5 }}>
         {/* swap this empty View for your next widget */}
       </View>
 
