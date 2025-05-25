@@ -341,14 +341,14 @@ const styles = StyleSheet.create({
   },
   sourceItemContainer: {
     marginBottom: 5,
-    marginHorizontal: 16,
+    marginHorizontal: 5,
     borderRadius: 15,
     backgroundColor: '#FF3B30',
     overflow: 'hidden',
   },
   sourceSummary: {
     borderRadius: 15,
-    overflow: 'hidden'
+    // overflow: 'hidden'
   },
   summaryContent: {
     flexDirection: 'row',
