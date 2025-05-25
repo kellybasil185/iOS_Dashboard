@@ -39,14 +39,14 @@ export default function Dashboard() {
       <View
         style={[
           styles.notificationsContainer,
-          { flex: 2.5, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+          { flex: 2, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
         ]}
       >
         <NewNotificationWidget />
       </View>
 
       {/* Placeholder for any other widget — also 1 part */}
-      <View style={{ flex: 0.8 }}>
+      <View style={{ flex: 0.5 }}>
         {/* swap this empty View for your next widget */}
       </View>
 
