@@ -342,13 +342,12 @@ const styles = StyleSheet.create({
   sourceItemContainer: {
     marginBottom: 5,
     marginHorizontal: 5,
-    borderRadius: 15,
+    borderRadius: 20,
     backgroundColor: '#FF3B30',
     overflow: 'hidden',
   },
   sourceSummary: {
-    borderRadius: 15,
-    // overflow: 'hidden'
+    borderRadius: 20,
   },
   summaryContent: {
     flexDirection: 'row',
