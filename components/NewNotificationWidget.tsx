@@ -23,7 +23,7 @@ import ConfirmationPopup from './ConfirmationPopup';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // For caching
 
 // --- Configuration for API and Caching ---
-const API_BASE_URL = 'https://02ac-41-66-199-205.ngrok-free.app'; // e.g., 'https://your-id.ngrok-free.app' or http://localhost:3001
+const API_BASE_URL = 'https://73bb-41-66-199-205.ngrok-free.app'; // e.g., 'https://your-id.ngrok-free.app' or http://localhost:3001
 const NOTIFICATIONS_ENDPOINT = `${API_BASE_URL}/api/notifications`;
 const POLLING_INTERVAL = 15000; // 15 seconds
 const CACHE_KEY = 'cachedNotifications';
