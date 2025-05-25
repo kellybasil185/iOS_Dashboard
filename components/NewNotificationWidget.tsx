@@ -270,7 +270,7 @@ export default function NewNotificationWidget() {
       <View
         style={[
           styles.widgetContainer,
-          { backgroundColor: isDark ? '#1F0027' : '#F0F0F0' },
+          { backgroundColor: isDark ? '#2E0138' : '#6E6E6E' },
         ]}
       >
         <Text
