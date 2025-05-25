@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   sourceItemContainer: {
     marginBottom: 5,
     marginHorizontal: 16,
-    borderRadius: 25,
+    borderRadius: 20,
     backgroundColor: '#FF3B30',
     overflow: 'hidden',
   },
