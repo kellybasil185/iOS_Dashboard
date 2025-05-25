@@ -265,34 +265,6 @@ export default function NewNotificationWidget() {
     orderedSources = ['TradingView'];
   }
 
-  if (notifications.length === 0) {
-    return (
-      <View
-        style={[
-          styles.widgetContainer,
-          { backgroundColor: isDark ? '#2E0138' : '#6E6E6E' },
-        ]}
-      >
-        <Text
-          style={[
-            styles.widgetHeaderTitle,
-            { color: isDark ? '#FFFFFF' : '#000000' },
-          ]}
-        >
-          Notifications
-        </Text>
-        <Text
-          style={[
-            styles.emptyText,
-            { color: isDark ? '#8E8E93' : '#666666' },
-          ]}
-        >
-          No notifications yet.
-        </Text>
-      </View>
-    );
-  }
-
   return (
     <View
       style={[
@@ -326,6 +298,7 @@ export default function NewNotificationWidget() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   widgetContainer: {
