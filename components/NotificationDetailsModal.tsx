@@ -21,6 +21,9 @@ interface NotificationDetailsModalProps {
   isVisible: boolean;
   onClose: () => void;
   source: string;
+  isDark: boolean;
+  formatDate: (dateString: string | undefined) => string;
+  getIconSource: (sourceName: string) => any;
   notifications: Array<{
     id: number;
     content: string;
