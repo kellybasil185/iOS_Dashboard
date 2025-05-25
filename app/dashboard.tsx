@@ -7,7 +7,6 @@ import {
   useColorScheme,
   TouchableOpacity,
   View,
-  Dimensions,
 } from 'react-native';
 import DashboardHeader from '@/components/DashboardHeader';
 import CategoryGrid from '@/components/CategoryGrid';
@@ -15,12 +14,6 @@ import Calculator from '@/components/Calculator';
 import { Calculator as CalculatorIcon } from 'lucide-react-native';
 import NewNotificationWidget from '@/components/NewNotificationWidget';
 import { getStatusBarHeight } from '@/utils/statusBar';
-
-const { height: WINDOW_HEIGHT } = Dimensions.get('window');
-
-// Adjust these percentages as needed:
-const GRID_PERCENT = 0.30;        // 30% of screen height
-const NOTIFS_PERCENT = 0.30;     // 30% of screen height
 
 export default function Dashboard() {
   const colorScheme = useColorScheme();
@@ -31,28 +24,22 @@ export default function Dashboard() {
     setIsCalculatorVisible((prev) => !prev);
   };
 
-  const gridHeight = WINDOW_HEIGHT * GRID_PERCENT;
-  const notificationsHeight = WINDOW_HEIGHT * NOTIFS_PERCENT;
-
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: isDark ? '#000' : '#F2F2F7' }]}
     >
       <DashboardHeader />
 
-      {/* Fixed-percentage height for CategoryGrid */}
-      <View style={{ height: gridHeight }}>
+      {/* Category grid takes 70% of available space */}
+      <View style={{ flex: 7 }}>
         <CategoryGrid />
       </View>
 
-      {/* Fixed-percentage height for Notifications */}
+      {/* Notifications take remaining 30% */}
       <View
         style={[
           styles.notificationsContainer,
-          {
-            height: notificationsHeight,
-            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-          },
+          { flex: 3, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
         ]}
       >
         <NewNotificationWidget />
