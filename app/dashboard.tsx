@@ -31,7 +31,7 @@ export default function Dashboard() {
       <DashboardHeader />
 
       {/* Category grid takes 2 parts */}
-      <View style={{ flex: 2 }}>
+      <View style={{ flex: 2.5 }}>
         <CategoryGrid />
       </View>
 
