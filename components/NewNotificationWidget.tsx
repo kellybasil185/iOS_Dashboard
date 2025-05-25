@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sourceSummary: {
-    borderRadius: 25,
+    borderRadius: 15,
     overflow: 'hidden'
   },
   summaryContent: {
