@@ -30,19 +30,24 @@ export default function Dashboard() {
     >
       <DashboardHeader />
 
-      {/* Category grid takes 70% of available space */}
+      {/* Category grid takes 2 parts */}
       <View style={{ flex: 2 }}>
         <CategoryGrid />
       </View>
 
-      {/* Notifications take remaining 30% */}
+      {/* Notifications take 1 part */}
       <View
         style={[
           styles.notificationsContainer,
-          { flex: 2, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+          { flex: 1, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
         ]}
       >
         <NewNotificationWidget />
+      </View>
+
+      {/* Placeholder for any other widget — also 1 part */}
+      <View style={{ flex: 1 }}>
+        {/* swap this empty View for your next widget */}
       </View>
 
       <TouchableOpacity style={styles.calculatorButton} onPress={toggleCalculator}>
