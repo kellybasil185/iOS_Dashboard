@@ -31,7 +31,7 @@ export default function Dashboard() {
       <DashboardHeader />
 
       {/* Category grid takes 2 parts */}
-      <View style={{ flex: 2.8 }}>
+      <View style={{ flex: 2 }}>
         <CategoryGrid />
       </View>
 
@@ -39,7 +39,7 @@ export default function Dashboard() {
       <View
         style={[
           styles.notificationsContainer,
-          { flex: 2, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+          { flex: 2.5, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
         ]}
       >
         <NewNotificationWidget />
