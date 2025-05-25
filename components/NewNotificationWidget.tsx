@@ -339,7 +339,7 @@ export default function NewNotificationWidget() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={[styles.widgetContainer, { backgroundColor: isDark ? '#48418c' : '#969596' }]}>
+      <View style={[styles.widgetContainer, { backgroundColor: isDark ? '#37335c' : '#969596' }]}>
         <Text style={[styles.widgetHeaderTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
           Notifications
         </Text>
