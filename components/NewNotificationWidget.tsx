@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   widgetContainer: {
     flex: 1,
     paddingVertical: 8,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   widgetHeaderTitle: {
     fontSize: 20,
