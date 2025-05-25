@@ -348,6 +348,7 @@ const styles = StyleSheet.create({
   },
   sourceSummary: {
     borderRadius: 25,
+    overflow: 'hidden'
   },
   summaryContent: {
     flexDirection: 'row',
