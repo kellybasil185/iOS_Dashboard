@@ -31,7 +31,7 @@ export default function Dashboard() {
       <DashboardHeader />
 
       {/* Category grid takes 70% of available space */}
-      <View style={{ flex: 2.5 }}>
+      <View style={{ flex: 2 }}>
         <CategoryGrid />
       </View>
 
