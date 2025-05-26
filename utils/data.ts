@@ -24,7 +24,7 @@ export const categories: Category[] = [
       {
         id: 'metatrader5',
         name: 'MetaTrader 5',
-        url: 'https://www.metatrader5.com/',
+        url: 'https://mt5.xmglobal.com/',
       },
       {
         id: 'metatrader4',
