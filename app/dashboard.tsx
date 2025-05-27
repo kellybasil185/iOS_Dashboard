@@ -39,7 +39,7 @@ export default function Dashboard() {
       <View
         style={[
           styles.notificationsContainer,
-          { flex: 1, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+          { flex: 2.2, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
         ]}
       >
         <NewNotificationWidget />
