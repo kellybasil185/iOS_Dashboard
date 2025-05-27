@@ -1,19 +1,31 @@
+// gwewn/ios/ios-68e9577bddf0c4664dc99c0df95844e9e902dd60/utils/icons.tsx
 import React from 'react';
 import CustomIcon from '@/components/CustomIcon';
 import { imageMap } from '@/components/IconRegistry';
 
-const iconCache: { [key: string]: React.FC } = {};
+// Define props for the cached icon component
+interface CachedIconProps {
+  size?: number;
+  tintColor?: string; // Add tintColor here
+  // Add any other props CustomIcon might need in the future
+}
 
-function getCachedIcon(name: string): React.FC {
+const iconCache: { [key: string]: React.FC<CachedIconProps> } = {}; // Update type for iconCache
+
+function getCachedIcon(name: string): React.FC<CachedIconProps> {
   if (iconCache[name]) {
     return iconCache[name];
   }
 
-  const iconComponent = () => <CustomIcon name={name} />;
+  // The component now accepts props and forwards them
+  const iconComponent: React.FC<CachedIconProps> = (props) => (
+    <CustomIcon name={name} {...props} />
+  );
   iconCache[name] = iconComponent;
   return iconComponent;
 }
 
+// Functions getIconForCategory and getIconForApp remain the same
 export function getIconForCategory(id: string) {
   switch (id) {
     case 'trading':
