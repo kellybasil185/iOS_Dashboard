@@ -1,5 +1,5 @@
 // gwewn/ios/ios-68e9577bddf0c4664dc99c0df95844e9e902dd60/components/EmbeddedWebViewModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Added useRef
 import {
   Modal,
   View,
@@ -9,9 +9,8 @@ import {
   useColorScheme,
   ActivityIndicator,
   SafeAreaView,
-  Platform, // Import Platform
+  Platform,
 } from 'react-native';
-// Import WebView conditionally or only for native
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { X } from 'lucide-react-native';
 
@@ -30,68 +29,33 @@ const EmbeddedWebViewModal: React.FC<EmbeddedWebViewModalProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [isLoading, setIsLoading] = useState(true); // For iframe, loading is harder to track precisely
+  const [isLoading, setIsLoading] = useState(true);
+  const webViewRef = useRef<WebView>(null); // Ref to access WebView methods if needed
 
+  // When the modal becomes visible, ensure we are loading the initial URL
+  // This also handles the case where the same modal might be reused for different apps (though less likely with current setup)
   useEffect(() => {
     if (isVisible) {
-      setIsLoading(true); // Reset loading state when modal becomes visible
-      // For iframe, we can assume it starts loading. True loading state is tricky.
-      // A timeout might be used to hide loader if no 'load' event is captured.
-      const timer = setTimeout(() => setIsLoading(false), 3000); // Example: hide loader after 3s
-      return () => clearTimeout(timer);
+      setIsLoading(true); // Show loader immediately
+      // If the webViewRef is available and pointing to a loaded page that's not the current URL,
+      // you might choose to reload, but typically source prop change handles this.
     }
-  }, [isVisible]);
+  }, [isVisible, url]);
 
+  const handleNavigationStateChange = (navState: WebViewNavigation) => {
+    setIsLoading(navState.loading);
+  };
+
+  const injectedJavaScriptBeforeContentLoaded = `
+    // You could try to inject JS here if needed for specific site workarounds, but it's complex.
+    // For example, trying to override something or set a flag.
+    // window.isEmbeddedInMyApp = true;
+    true; // Must return true
+  `;
 
   if (!isVisible) {
     return null;
   }
-
-  const renderWebView = () => {
-    if (Platform.OS === 'web') {
-      // For web, use an iframe. Be aware of X-Frame-Options.
-      return (
-        <iframe
-          src={url}
-          style={{ flex: 1, border: 'none', width: '100%', height: '100%' }}
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setIsLoading(false);
-            console.error("Error loading URL in iframe for: ", appName);
-            // You might want to show an error message here
-          }}
-          title={appName}
-        />
-      );
-    } else {
-      // For native, use react-native-webview
-      return (
-        <WebView
-          source={{ uri: url }}
-          style={{ flex: 1, opacity: isLoading ? 0 : 1 }}
-          onLoadStart={() => setIsLoading(true)}
-          onLoadEnd={() => setIsLoading(false)}
-          onError={(syntheticEvent) => {
-            setIsLoading(false);
-            const { nativeEvent } = syntheticEvent;
-            console.warn('WebView error: ', nativeEvent);
-            // Handle error, e.g., show a message
-          }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={true}
-          renderLoading={() => (
-            <ActivityIndicator
-              style={StyleSheet.absoluteFill}
-              size="large"
-              color={isDark ? '#FFFFFF' : '#000000'}
-            />
-          )}
-        />
-      );
-    }
-  };
-
 
   return (
     <Modal
@@ -109,16 +73,54 @@ const EmbeddedWebViewModal: React.FC<EmbeddedWebViewModalProps> = ({
             <X size={24} color={isDark ? '#FFFFFF' : '#000000'} />
           </TouchableOpacity>
         </View>
-        {Platform.OS === 'web' && isLoading && ( // Show loader for iframe differently if needed
-           <ActivityIndicator
-             style={styles.loader}
-             size="large"
-             color={isDark ? '#FFFFFF' : '#000000'}
-           />
-        )}
-        <View style={styles.webviewContainer}>
-          {renderWebView()}
-        </View>
+
+        {/* The ActivityIndicator will be shown by renderLoading or if isLoading is true before WebView renders */}
+        <WebView
+          ref={webViewRef}
+          source={{ uri: url }}
+          style={{ flex: 1, backgroundColor: isDark ? '#000' : '#FFF' }} // Set BG color for webview itself
+          onLoadStart={() => setIsLoading(true)}
+          onLoadEnd={() => setIsLoading(false)}
+          onLoadProgress={({ nativeEvent }) => {
+            // You can use nativeEvent.progress (0-1) for a more granular loading bar if desired
+            if (nativeEvent.progress === 1) {
+              setIsLoading(false);
+            } else {
+              setIsLoading(true);
+            }
+          }}
+          onError={(syntheticEvent) => {
+            setIsLoading(false);
+            const { nativeEvent } = syntheticEvent;
+            console.warn(`WebView error loading ${appName} (${url}): `, nativeEvent.description);
+            // Consider showing an error message to the user within the modal here
+            // e.g., set an error state and display a Text component
+          }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true} // Important for sites that use localStorage/sessionStorage
+          cacheEnabled={true} // Default on iOS, ensures HTTP caching for resources
+          // cacheMode: 'LOAD_CACHE_ELSE_NETWORK', // More relevant for Android, iOS handles caching differently
+          allowsInlineMediaPlayback={true} // For videos etc.
+          sharedCookiesEnabled={true} // If you need to share cookies with Safari (iOS)
+          // userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1" // Uncomment to experiment
+          startInLoadingState={true} // Shows renderLoading while the initial HTML is fetched
+          renderLoading={() => (
+            <ActivityIndicator
+              style={styles.loader} // Use absoluteFill if you want it to cover the whole WebView area
+              size="large"
+              color={isDark ? '#FFFFFF' : '#000000'}
+            />
+          )}
+          // injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded} // Advanced use
+        />
+        {/* Display a more prominent loader overlay if needed, especially if renderLoading isn't enough */}
+        {isLoading && Platform.OS !== 'web' && ( // renderLoading handles initial, this is more for ongoing
+             <ActivityIndicator
+               style={styles.loaderOverlay}
+               size="large"
+               color={isDark ? '#777' : '#999'}
+             />
+           )}
       </SafeAreaView>
     </Modal>
   );
@@ -131,33 +133,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomWidth: StyleSheet.hairlineWidth, // Use hairlineWidth for subtle separator
+    // borderBottomColor: '#E5E5EA', // Light mode separator
+    // For dynamic separator color:
+    // borderBottomColor: useColorScheme() === 'dark' ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.36)',
+
   },
   modalTitle: {
     fontSize: 17,
     fontWeight: '600',
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: 30,
+    marginHorizontal: 30, // Space for close button
   },
   closeButton: {
     padding: 8,
-    position: 'absolute',
+    position: 'absolute', // Ensure it's easily tappable over the title if text is long
     right: 8,
-    top: 8,
+    top: 6, // Adjust to vertically align with title
     zIndex: 1,
   },
-  webviewContainer: { // Added a container for webview/iframe
-    flex: 1,
-    overflow: 'hidden', // Helps contain the iframe
+  loader: { // This loader is specifically for renderLoading, centered by WebView
+    flex:1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent', // So it overlays the webview's initial blank state
   },
-  loader: { // General loader style
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -12 }, { translateY: -12 }],
-    zIndex: 10,
+   loaderOverlay: { // An alternative/additional overlay loader
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10, // Ensure it's above the WebView content
   },
 });
 
