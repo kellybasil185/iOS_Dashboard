@@ -395,6 +395,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginHorizontal: 5, // Indent items within the widget
     borderRadius: 12,
+    height: 80,
     // backgroundColor: '#FF3B30', // Removed: Delete button is not visually persistent
     overflow: 'hidden', // Important for rounded corners with swipe
   },
