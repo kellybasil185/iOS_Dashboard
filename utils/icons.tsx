@@ -107,6 +107,8 @@ export function getIconForApp(id: string) {
       return getCachedIcon('stripchat');
     case 'pintrest':
       return getCachedIcon('pintrest');
+    case 'x':
+      return getCachedIcon('x');
     default:
       return getCachedIcon('default');
   }

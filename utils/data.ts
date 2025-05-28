@@ -111,6 +111,11 @@ export const categories: Category[] = [
         url: 'https://open.spotify.com/',
       },
       {
+        id: 'x',
+        name: 'X',
+        url: 'https://www.x.com/',
+      },
+      {
         id: 'twitch',
         name: 'Twitch',
         url: 'https://www.twitch.tv/',
