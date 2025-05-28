@@ -121,6 +121,11 @@ export const categories: Category[] = [
         url: 'https://www.quora.com/',
       },
       {
+        id: 'pintrest',
+        name: 'Pintrest',
+        url: 'https://www.pintrest.com/',
+      },
+      {
         id: 'reddit',
         name: 'Reddit',
         url: 'https://www.reddit.com/',

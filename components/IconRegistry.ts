@@ -35,6 +35,7 @@ export const imageMap: { [key: string]: number } = {
     web: require('@/assets/icons/web.png'),
     xm: require('@/assets/icons/xm.png'),
     stripchat: require('@/assets/icons/stripchat.png'),
+    pintrest: require('@/assets/icons/pintrest.png'),
     default: require('@/assets/icons/default.png'),
   };
   
