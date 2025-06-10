@@ -103,6 +103,8 @@ export function getIconForApp(id: string) {
       return getCachedIcon('aliexpress');
     case 'amazon':
       return getCachedIcon('amazon');
+    case 'outlook':
+      return getCachedIcon('outlook');
     case 'stripchat':
       return getCachedIcon('stripchat');
     case 'pintrest':

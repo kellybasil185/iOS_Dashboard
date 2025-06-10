@@ -70,13 +70,18 @@ export const categories: Category[] = [
       },
       {
         id: 'telegram',
-        name: 'Telegram Web',
+        name: 'Telegram',
         url: 'https://web.telegram.org/',
       },
       {
         id: 'gdrive',
         name: 'Google Drive',
         url: 'https://drive.google.com/',
+      },
+      {
+        id: 'outlook',
+        name: 'Outlook',
+        url: 'https://outlook.live.com/',
       },
       {
         id: 'duckduckgo',
